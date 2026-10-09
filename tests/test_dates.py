@@ -7,6 +7,7 @@ from atten.dates import (
     format_shamsi_datetime,
     parse_shamsi_date,
     parse_shamsi_datetime,
+    format_shamsi_weekday,
     shamsi_month_dates,
     shamsi_week_index,
     storage_date,
@@ -45,6 +46,9 @@ def test_shamsi_month_starts_on_saturday_index_and_lists_mehr_1405():
     assert days[14] == date(2026, 10, 7)
     assert format_shamsi_date(days[-1]) == "1405/07/30"
     assert shamsi_week_index(date(2026, 10, 7)) == 4
+    assert format_shamsi_weekday(date(2026, 10, 7)) == "چهارشنبه"
+    assert format_shamsi_weekday("2026-10-09") == "جمعه"
+    assert format_shamsi_weekday("2026-10-10") == "شنبه"
 
 
 def test_invalid_shamsi_dates_are_rejected():

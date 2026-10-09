@@ -6,7 +6,7 @@ from pathlib import Path
 from tkinter import filedialog, ttk
 
 from atten.attlog import load_attlog
-from atten.dates import format_shamsi_date, format_shamsi_datetime
+from atten.dates import format_shamsi_date, format_shamsi_datetime, format_shamsi_weekday
 from atten.db.repository import ClockEventImport, import_clock_events, list_clock_events
 from atten.paths import data_dir
 from atten.ui.fonts import UI_FONT
@@ -17,6 +17,7 @@ COLUMNS = (
     "created_at",
     "time",
     "date",
+    "weekday",
     "name",
     "remote_id",
     "id",
@@ -26,6 +27,7 @@ HEADINGS = {
     "remote_id": "کد پرسنلی",
     "name": "نام",
     "date": "تاریخ",
+    "weekday": "روز",
     "time": "ساعت",
     "created_at": "تاریخ افزودن",
     "updated_at": "تاریخ به‌روزرسانی",
@@ -35,6 +37,7 @@ WIDTHS = {
     "remote_id": 140,
     "name": 180,
     "date": 120,
+    "weekday": 100,
     "time": 100,
     "created_at": 160,
     "updated_at": 170,
@@ -159,6 +162,7 @@ class ClockEventsView(tk.Frame):
                     _format_stamp(row["created_at"]),
                     row["time"],
                     format_shamsi_date(str(row["date"])),
+                    format_shamsi_weekday(str(row["date"])),
                     row["name"],
                     row["remote_id"],
                     row["id"],

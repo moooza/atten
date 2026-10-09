@@ -195,9 +195,24 @@ def shamsi_ymd(value: date | datetime | str) -> tuple[int, int, int]:
     return year, month, day
 
 
+SHAMSI_WEEKDAY_NAMES = (
+    "شنبه",
+    "یکشنبه",
+    "دوشنبه",
+    "سه‌شنبه",
+    "چهارشنبه",
+    "پنجشنبه",
+    "جمعه",
+)
+
+
 def shamsi_week_index(value: date | datetime | str) -> int:
     """Saturday is 0 and Friday is 6."""
     return (_as_date(value).weekday() + 2) % 7
+
+
+def format_shamsi_weekday(value: date | datetime | str) -> str:
+    return SHAMSI_WEEKDAY_NAMES[shamsi_week_index(value)]
 
 
 def shamsi_month_dates(year: int, month: int) -> tuple[date, ...]:

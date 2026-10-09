@@ -1,7 +1,12 @@
 import tkinter as tk
 from datetime import date
 
-from atten.dates import format_shamsi_date, format_shamsi_datetime, parse_shamsi_date
+from atten.dates import (
+    format_shamsi_date,
+    format_shamsi_datetime,
+    format_shamsi_weekday,
+    parse_shamsi_date,
+)
 from atten.leave import compose_leave_minutes, shamsi_year_of
 from atten.db.connection import connect
 from atten.db.migrate import migrate
@@ -297,13 +302,24 @@ def test_clock_events_menu_shows_punches_in_shamsi(tmp_path, monkeypatch):
         assert window.clock_events_view.winfo_ismapped()
         assert not window.personnel_view.winfo_ismapped()
         assert window.clock_events_view.count.cget("text") == "1 مورد"
+        assert window.clock_events_view.tree.heading("weekday")["text"] == "روز"
+        assert window.clock_events_view.tree["columns"][3:5] == ("date", "weekday")
         values = [
             window.clock_events_view.tree.item(item, "values")
             for item in window.clock_events_view.tree.get_children()
         ]
         added = format_shamsi_datetime("2026-10-07T16:30:00", seconds=True)
         assert values == [
-            (added, added, "08:30:00", format_shamsi_date("2026-10-07"), "علی رضایی", "dev-1", "1")
+            (
+                added,
+                added,
+                "08:30:00",
+                format_shamsi_date("2026-10-07"),
+                format_shamsi_weekday("2026-10-07"),
+                "علی رضایی",
+                "dev-1",
+                "1",
+            )
         ]
 
         window.nav_items["dashboard"].event_generate("<Button-1>")
@@ -366,8 +382,26 @@ def test_clock_events_import_shows_the_loaded_file(tmp_path, monkeypatch):
         ]
         added = format_shamsi_datetime("2026-10-07T16:30:00", seconds=True)
         assert values == [
-            (added, added, "20:11:58", format_shamsi_date("2026-09-23"), "Karimi", "1002", "1"),
-            (added, added, "18:03:50", format_shamsi_date("2026-10-06"), "jamalian", "1008", "2"),
+            (
+                added,
+                added,
+                "20:11:58",
+                format_shamsi_date("2026-09-23"),
+                format_shamsi_weekday("2026-09-23"),
+                "Karimi",
+                "1002",
+                "1",
+            ),
+            (
+                added,
+                added,
+                "18:03:50",
+                format_shamsi_date("2026-10-06"),
+                format_shamsi_weekday("2026-10-06"),
+                "jamalian",
+                "1008",
+                "2",
+            ),
         ]
     finally:
         root.destroy()
