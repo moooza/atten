@@ -2,11 +2,14 @@
 
 import tkinter as tk
 from collections.abc import Callable
+from datetime import date
 from pathlib import Path
 
+from atten.dates import format_shamsi_date, parse_shamsi_date
 from atten.db.repository import add_personnel, update_personnel
 from atten.persian import english_digits
 from atten.ui.fonts import UI_FONT
+from atten.ui.shamsi_date import ShamsiDateEntry
 
 BACKGROUND = "#eef1f4"
 PANEL = "#ffffff"
@@ -42,6 +45,8 @@ class PersonnelForm(tk.Toplevel):
         self.work_minutes = tk.StringVar()
         self.remote_id = tk.StringVar()
         self.mobile = tk.StringVar()
+        self.cooperation_start = tk.StringVar()
+        self.cooperation_end = tk.StringVar()
         if person is not None:
             hours, minutes = split_daily_hours(person["daily_hours"])
             self.first_name.set(str(person["first_name"]))
@@ -50,6 +55,10 @@ class PersonnelForm(tk.Toplevel):
             self.work_minutes.set(str(minutes))
             self.remote_id.set(str(person["remote_id"] or ""))
             self.mobile.set(str(person["mobile"] or ""))
+            if person.get("cooperation_start"):
+                self.cooperation_start.set(format_shamsi_date(str(person["cooperation_start"])))
+            if person.get("cooperation_end"):
+                self.cooperation_end.set(format_shamsi_date(str(person["cooperation_end"])))
 
         body = tk.Frame(self, bg=PANEL, highlightthickness=1, highlightbackground=LINE)
         body.pack(fill="both", expand=True, padx=16, pady=16)
@@ -67,6 +76,8 @@ class PersonnelForm(tk.Toplevel):
         self._duration_fields(body)
         self._field(body, "کد پرسنلی (اختیاری)", self.remote_id)
         self._field(body, "شماره همراه (اختیاری)", self.mobile)
+        self.start_field = self._date_field(body, "تاریخ شروع همکاری", self.cooperation_start)
+        self.end_field = self._date_field(body, "تاریخ پایان همکاری", self.cooperation_end)
 
         self.error = tk.Label(
             body,
@@ -98,6 +109,8 @@ class PersonnelForm(tk.Toplevel):
     def save(self) -> None:
         try:
             hours = parse_work_duration(self.work_hours.get(), self.work_minutes.get())
+            started = _optional_shamsi_date(self.cooperation_start.get())
+            ended = _optional_shamsi_date(self.cooperation_end.get())
             if self.person_id is None:
                 add_personnel(
                     self.first_name.get(),
@@ -105,6 +118,8 @@ class PersonnelForm(tk.Toplevel):
                     hours,
                     remote_id=self.remote_id.get(),
                     mobile=self.mobile.get(),
+                    cooperation_start=started,
+                    cooperation_end=ended,
                     db_file=self.db_file,
                 )
             else:
@@ -115,6 +130,8 @@ class PersonnelForm(tk.Toplevel):
                     hours,
                     remote_id=self.remote_id.get(),
                     mobile=self.mobile.get(),
+                    cooperation_start=started,
+                    cooperation_end=ended,
                     db_file=self.db_file,
                 )
         except ValueError as exc:
@@ -141,6 +158,14 @@ class PersonnelForm(tk.Toplevel):
         )
         entry.pack(fill="x", padx=18, ipady=6)
         return entry
+
+    def _date_field(self, parent: tk.Misc, label: str, variable: tk.StringVar) -> ShamsiDateEntry:
+        tk.Label(parent, text=label, font=(UI_FONT, 10), bg=PANEL, fg=INK).pack(
+            anchor="e", padx=18, pady=(8, 2)
+        )
+        field = ShamsiDateEntry(parent, variable)
+        field.pack(anchor="e", padx=18)
+        return field
 
     def _duration_fields(self, parent: tk.Misc) -> None:
         tk.Label(
@@ -227,6 +252,13 @@ def parse_work_duration(hours_text: str, minutes_text: str) -> float:
     if total <= 0:
         raise ValueError("میزان ساعت کاری باید بیشتر از صفر باشد.")
     return total
+
+
+def _optional_shamsi_date(text: str) -> date | None:
+    cleaned = text.strip()
+    if not cleaned:
+        return None
+    return parse_shamsi_date(cleaned)
 
 
 def _whole_number(text: str) -> int | None:

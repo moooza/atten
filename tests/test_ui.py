@@ -174,6 +174,61 @@ def test_add_personnel_form_saves_and_shows_the_new_row(tmp_path, monkeypatch):
         root.destroy()
 
 
+def test_add_personnel_form_stores_cooperation_dates_as_gregorian(tmp_path, monkeypatch):
+    db_file = tmp_path / "atten.db"
+    migrate(db_file)
+    monkeypatch.setattr("atten.db.repository._timestamp", lambda: "2026-10-07T16:30:00")
+    root = tk.Tk()
+    root.attributes("-alpha", 0)
+    try:
+        window = MainWindow(root, db_file=db_file)
+        window.show_personnel()
+        root.update()
+        window.personnel_view.add_button.event_generate("<Button-1>")
+        root.update()
+        form = window.personnel_view.form
+        assert form is not None
+        assert form.start_field.winfo_ismapped()
+        assert form.end_field.winfo_ismapped()
+
+        form.first_name.set("علی")
+        form.last_name.set("رضایی")
+        form.work_hours.set("8")
+        form.work_minutes.set("0")
+        form.cooperation_end.set("1405/07/01")
+        form.save()
+        assert form.winfo_exists()
+        assert "تاریخ شروع همکاری" in form.error.cget("text")
+
+        form.cooperation_start.set("1405/07/15")
+        form.cooperation_end.set("1405/07/01")
+        form.save()
+        assert form.winfo_exists()
+        assert "تاریخ پایان همکاری" in form.error.cget("text")
+
+        form.cooperation_start.set("1405/07/01")
+        form.cooperation_end.set("1405/07/15")
+        form.save()
+        root.update()
+
+        assert not form.winfo_exists()
+        person = list_personnel(db_file)[0]
+        assert person["cooperation_start"] == "2026-09-23"
+        assert person["cooperation_end"] == "2026-10-07"
+
+        window.personnel_view.tree.selection_set("1")
+        window.personnel_view.edit_button.event_generate("<Button-1>")
+        root.update()
+        edited = window.personnel_view.form
+        assert edited is not None
+        assert edited.cooperation_start.get() == format_shamsi_date("2026-09-23")
+        assert edited.cooperation_end.get() == format_shamsi_date("2026-10-07")
+        edited.destroy()
+        root.update()
+    finally:
+        root.destroy()
+
+
 def test_personnel_name_entry_replaces_arabic_letters(tmp_path, monkeypatch):
     db_file = tmp_path / "atten.db"
     migrate(db_file)

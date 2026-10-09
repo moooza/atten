@@ -31,7 +31,7 @@ def test_migrate_creates_schema_and_is_idempotent(tmp_path):
     first = migrate(db_file)
     second = migrate(db_file)
 
-    assert first == ["001", "002", "003", "004", "005", "006", "007", "008", "009", "010"]
+    assert first == ["001", "002", "003", "004", "005", "006", "007", "008", "009", "010", "011"]
     assert second == []
 
     with connect(db_file) as conn:
@@ -61,7 +61,7 @@ def test_migrate_creates_schema_and_is_idempotent(tmp_path):
             for row in conn.execute("PRAGMA table_info(leaves)")
         ]
 
-        assert versions == ["001", "002", "003", "004", "005", "006", "007", "008", "009", "010"]
+        assert versions == ["001", "002", "003", "004", "005", "006", "007", "008", "009", "010", "011"]
     assert journal.lower() == "wal"
     assert synchronous == 2
     assert foreign_keys == 1
@@ -75,6 +75,8 @@ def test_migrate_creates_schema_and_is_idempotent(tmp_path):
         "mobile",
         "created_at",
         "updated_at",
+        "cooperation_start",
+        "cooperation_end",
     ]
     assert clock_event_columns == [
         "id",
@@ -167,6 +169,8 @@ def test_list_personnel_returns_saved_rows(tmp_path):
             "last_name": "رضایی",
             "daily_hours": 4.5,
             "mobile": "09120000000",
+            "cooperation_start": None,
+            "cooperation_end": None,
             "created_at": None,
             "updated_at": None,
         }
@@ -189,10 +193,55 @@ def test_add_personnel_inserts_a_row(tmp_path, monkeypatch):
             "last_name": "رضایی",
             "daily_hours": 4.5,
             "mobile": "09120000000",
+            "cooperation_start": None,
+            "cooperation_end": None,
             "created_at": "2026-10-07T16:30:00",
             "updated_at": "2026-10-07T16:30:00",
         }
     ]
+
+
+def test_personnel_stores_cooperation_dates_as_gregorian(tmp_path, monkeypatch):
+    db_file = tmp_path / "atten.db"
+    migrate(db_file)
+    monkeypatch.setattr("atten.db.repository._timestamp", lambda: "2026-10-07T16:30:00")
+    started = parse_shamsi_date("1405/07/01")
+    ended = parse_shamsi_date("1405/07/15")
+
+    person_id = add_personnel(
+        "علی",
+        "رضایی",
+        8,
+        cooperation_start=started,
+        cooperation_end=ended,
+        db_file=db_file,
+    )
+
+    person = list_personnel(db_file)[0]
+    assert person["cooperation_start"] == "2026-09-23"
+    assert person["cooperation_end"] == "2026-10-07"
+
+    update_personnel(
+        person_id,
+        "علی",
+        "رضایی",
+        8,
+        cooperation_start=started,
+        db_file=db_file,
+    )
+    assert list_personnel(db_file)[0]["cooperation_end"] is None
+
+    with pytest.raises(ValueError, match="تاریخ شروع همکاری را وارد کنید"):
+        add_personnel("مریم", "احمدی", 8, cooperation_end=ended, db_file=db_file)
+    with pytest.raises(ValueError, match="تاریخ پایان همکاری باید بعد از تاریخ شروع"):
+        add_personnel(
+            "مریم",
+            "احمدی",
+            8,
+            cooperation_start=ended,
+            cooperation_end=started,
+            db_file=db_file,
+        )
 
 
 def test_personnel_and_clock_names_are_stored_with_persian_letters(tmp_path, monkeypatch):
@@ -332,6 +381,8 @@ def test_update_personnel_changes_the_same_row(tmp_path, monkeypatch):
         "last_name": "کاظمی",
         "daily_hours": 8,
         "mobile": None,
+        "cooperation_start": None,
+        "cooperation_end": None,
         "created_at": "2026-10-07T16:30:00",
         "updated_at": "2026-10-07T18:05:00",
     }

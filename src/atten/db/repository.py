@@ -26,19 +26,30 @@ def add_personnel(
     daily_hours: float,
     remote_id: str | None = None,
     mobile: str | None = None,
+    cooperation_start: date | str | None = None,
+    cooperation_end: date | str | None = None,
     db_file: Path | None = None,
 ) -> int:
     path = db_path() if db_file is None else db_file
-    fields = _validated_fields(first_name, last_name, daily_hours, remote_id, mobile)
+    fields = _validated_fields(
+        first_name,
+        last_name,
+        daily_hours,
+        remote_id,
+        mobile,
+        cooperation_start,
+        cooperation_end,
+    )
     created_at = _timestamp()
     try:
         with connect(path) as conn:
             cursor = conn.execute(
                 """
                 INSERT INTO personnel (
-                    remote_id, first_name, last_name, daily_hours, mobile, created_at, updated_at
+                    remote_id, first_name, last_name, daily_hours, mobile,
+                    cooperation_start, cooperation_end, created_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (*fields, created_at, created_at),
             )
@@ -55,10 +66,20 @@ def update_personnel(
     daily_hours: float,
     remote_id: str | None = None,
     mobile: str | None = None,
+    cooperation_start: date | str | None = None,
+    cooperation_end: date | str | None = None,
     db_file: Path | None = None,
 ) -> None:
     path = db_path() if db_file is None else db_file
-    fields = _validated_fields(first_name, last_name, daily_hours, remote_id, mobile)
+    fields = _validated_fields(
+        first_name,
+        last_name,
+        daily_hours,
+        remote_id,
+        mobile,
+        cooperation_start,
+        cooperation_end,
+    )
     try:
         with connect(path) as conn:
             found = conn.execute(
@@ -71,7 +92,7 @@ def update_personnel(
                 """
                 UPDATE personnel
                 SET remote_id = ?, first_name = ?, last_name = ?, daily_hours = ?, mobile = ?,
-                    updated_at = ?
+                    cooperation_start = ?, cooperation_end = ?, updated_at = ?
                 WHERE id = ?
                 """,
                 (*fields, _timestamp(), person_id),
@@ -87,7 +108,9 @@ def _validated_fields(
     daily_hours: float,
     remote_id: str | None,
     mobile: str | None,
-) -> tuple[str | None, str, str, float, str | None]:
+    cooperation_start: date | str | None = None,
+    cooperation_end: date | str | None = None,
+) -> tuple[str | None, str, str, float, str | None, str | None, str | None]:
     first = normalize_text(first_name.strip())
     last = normalize_text(last_name.strip())
     if not first:
@@ -100,7 +123,21 @@ def _validated_fields(
         raise ValueError("ساعت کاری باید یک عدد بزرگ‌تر از صفر باشد.") from exc
     if not math.isfinite(hours) or hours <= 0:
         raise ValueError("ساعت کاری باید یک عدد بزرگ‌تر از صفر باشد.")
-    return (_blank_to_none(remote_id), first, last, hours, _blank_to_none(mobile))
+    started, ended = _cooperation_dates(cooperation_start, cooperation_end)
+    return (_blank_to_none(remote_id), first, last, hours, _blank_to_none(mobile), started, ended)
+
+
+def _cooperation_dates(
+    start: date | str | None,
+    end: date | str | None,
+) -> tuple[str | None, str | None]:
+    started = _optional_day(start)
+    ended = _optional_day(end)
+    if ended is not None and started is None:
+        raise ValueError("تاریخ شروع همکاری را وارد کنید.")
+    if started is not None and ended is not None and ended < started:
+        raise ValueError("تاریخ پایان همکاری باید بعد از تاریخ شروع یا برابر با آن باشد.")
+    return started, ended
 
 
 def _save_error(exc: sqlite3.IntegrityError) -> ValueError:
@@ -126,7 +163,8 @@ def list_personnel(db_file: Path | None = None) -> list[dict[str, object]]:
     with connect(path) as conn:
         rows = conn.execute(
             """
-            SELECT id, remote_id, first_name, last_name, daily_hours, mobile, created_at, updated_at
+            SELECT id, remote_id, first_name, last_name, daily_hours, mobile,
+                   cooperation_start, cooperation_end, created_at, updated_at
             FROM personnel
             ORDER BY id
             """
