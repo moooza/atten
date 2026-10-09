@@ -7,7 +7,7 @@ from datetime import date
 from pathlib import Path
 from tkinter import messagebox, ttk
 
-from atten.dates import format_shamsi_date, parse_shamsi_date
+from atten.dates import format_shamsi_date, format_shamsi_weekday, parse_shamsi_date
 from atten.db.repository import (
     clear_work_punches,
     list_daily_punches,
@@ -544,6 +544,7 @@ def _table_columns(punch_count: int) -> tuple[tuple[str, str], ...]:
         title = "ورود" if index % 2 == 0 else "خروج"
         columns.append((f"p{index}", title))
     columns.append(("date", "تاریخ"))
+    columns.append(("weekday", "روز"))
     columns.append(("holiday", "روز تعطیل"))
     return tuple(columns)
 
@@ -552,6 +553,7 @@ def _row_values(row: SheetRow, punch_count: int) -> tuple[str, ...]:
     padded = list(row.slots) + [None] * (punch_count - len(row.slots))
     ordered = [_clock_text(padded[index]) for index in range(punch_count - 1, -1, -1)]
     ordered.append(format_shamsi_date(row.date))
+    ordered.append(format_shamsi_weekday(row.date))
     ordered.append("☑" if row.holiday else "☐")
     return (
         "",

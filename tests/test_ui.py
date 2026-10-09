@@ -476,13 +476,53 @@ def test_calculation_pairs_each_days_punches_as_entry_then_exit(tmp_path):
             "خروج",
             "ورود",
             "تاریخ",
+            "روز",
             "روز تعطیل",
         ]
         values = [view.tree.item(item, "values") for item in view.tree.get_children()]
         assert values == [
-            ("", "", "+3.00", "21:00:00", "18:00:00", "17:00:00", "13:00:00", "12:00:00", "08:00:00", "1405/07/15", "☐"),
-            ("", "", "-8.00", "", "", "", "", "", "09:00:00", "1405/07/16", "☐"),
-            ("", "", "0.00", "", "", "", "", "", "", "1405/07/17", "☑"),
+            (
+                "",
+                "",
+                "+3.00",
+                "21:00:00",
+                "18:00:00",
+                "17:00:00",
+                "13:00:00",
+                "12:00:00",
+                "08:00:00",
+                "1405/07/15",
+                format_shamsi_weekday("2026-10-07"),
+                "☐",
+            ),
+            (
+                "",
+                "",
+                "-8.00",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "09:00:00",
+                "1405/07/16",
+                format_shamsi_weekday("2026-10-08"),
+                "☐",
+            ),
+            (
+                "",
+                "",
+                "0.00",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "1405/07/17",
+                format_shamsi_weekday("2026-10-09"),
+                "☑",
+            ),
         ]
         assert "incomplete" not in view.tree.item("2026-10-07", "tags")
         assert "incomplete" in view.tree.item("2026-10-08", "tags")
@@ -510,6 +550,7 @@ def test_calculation_pairs_each_days_punches_as_entry_then_exit(tmp_path):
             "17:30:00",
             "09:00:00",
             "1405/07/16",
+            format_shamsi_weekday("2026-10-08"),
             "☐",
         )
         assert "incomplete" not in view.tree.item("2026-10-08", "tags")
