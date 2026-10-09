@@ -26,7 +26,7 @@ class MainWindow(tk.Frame):
         self.pack(fill="both", expand=True)
         self.db_file = db_path() if db_file is None else db_file
         if isinstance(master, tk.Tk):
-            master.title(f"attendance {__version__}")
+            master.title(f"attendance نسخه {__version__}")
             master.minsize(760, 480)
             master.geometry("960x560")
             master.configure(bg=BACKGROUND)
