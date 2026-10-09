@@ -11,10 +11,12 @@ from atten.db.repository import (
     add_personnel,
     list_clock_events,
     list_leaves,
+    list_personnel,
     list_work_balances,
     list_work_punches,
 )
 from atten.ui.main_window import MainWindow
+from atten.ui.typing import on_entry_key
 
 
 def test_dashboard_button_is_before_personnel_and_opens_an_empty_page(tmp_path):
@@ -163,6 +165,55 @@ def test_add_personnel_form_saves_and_shows_the_new_row(tmp_path, monkeypatch):
         ]
         added = format_shamsi_datetime("2026-10-07T16:30:00")
         assert values == [(added, added, "09123334444", "4.5", "رضایی", "علی", "dev-9", "1")]
+    finally:
+        root.destroy()
+
+
+def test_personnel_name_entry_replaces_arabic_letters(tmp_path, monkeypatch):
+    db_file = tmp_path / "atten.db"
+    migrate(db_file)
+    root = tk.Tk()
+    root.attributes("-alpha", 0)
+    try:
+        window = MainWindow(root, db_file=db_file)
+        window.show_personnel()
+        root.update()
+        window.personnel_view.add_button.event_generate("<Button-1>")
+        root.update()
+        form = window.personnel_view.form
+        assert form is not None
+        entry = form.first_name_entry
+        entry.focus_set()
+        root.update()
+
+        typed = tk.Event()
+        typed.widget = entry
+        typed.char = "\u064a"
+        assert on_entry_key(typed) == "break"
+        assert entry.get() == "\u06cc"
+        assert form.first_name.get() == "\u06cc"
+
+        entry.insert(tk.END, "\u0643اظ\u0649")
+        entry.event_generate("<KeyRelease>")
+        root.update()
+        assert entry.get() == "\u06cc\u06a9اظ\u06cc"
+
+        form.last_name.set("رضا\u064a\u0643")
+        form.work_hours.set("۸")
+        form.work_minutes.set("۰")
+        form.remote_id.set("۱۲۳")
+        form.mobile.set("۰۹۱۲۳۳۳۴۴۴۴")
+        monkeypatch.setattr("atten.db.repository._timestamp", lambda: "2026-10-07T16:30:00")
+        form.save()
+        root.update()
+
+        assert not form.winfo_exists()
+        person = list_personnel(db_file)[0]
+        assert person["first_name"] == "\u06cc\u06a9اظ\u06cc"
+        assert person["last_name"] == "رضا\u06cc\u06a9"
+        assert person["remote_id"] == "123"
+        assert person["mobile"] == "09123334444"
+        assert person["daily_hours"] == 8
     finally:
         root.destroy()
 

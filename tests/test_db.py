@@ -215,6 +215,38 @@ def test_personnel_and_clock_names_are_stored_with_persian_letters(tmp_path, mon
     assert list_clock_events(db_file)[0]["name"] == "علی کاظمی"
 
 
+def test_stored_text_uses_persian_letters_and_english_digits(tmp_path, monkeypatch):
+    db_file = tmp_path / "atten.db"
+    migrate(db_file)
+    monkeypatch.setattr("atten.db.repository._timestamp", lambda: "2026-10-07T16:30:00")
+
+    add_personnel(
+        "عل\u064a",
+        "\u0643اظم\u0649",
+        8,
+        remote_id="\u06f1\u06f2\u0663",
+        mobile="۰۹۱۲۰۰۰۰۰۰۰",
+        db_file=db_file,
+    )
+    add_clock_event(
+        "\u06f1\u06f2\u0663",
+        "عل\u064a \u0643اظم\u064a",
+        "2026-10-07",
+        "۰۸:۳۰:۰۰",
+        db_file=db_file,
+    )
+
+    person = list_personnel(db_file)[0]
+    assert person["first_name"] == "عل\u06cc"
+    assert person["last_name"] == "\u06a9اظم\u06cc"
+    assert person["remote_id"] == "123"
+    assert person["mobile"] == "09120000000"
+    event = list_clock_events(db_file)[0]
+    assert event["remote_id"] == "123"
+    assert event["name"] == "عل\u06cc \u06a9اظم\u06cc"
+    assert event["time"] == "08:30:00"
+
+
 def test_persian_letter_migration_rewrites_existing_names(tmp_path):
     db_file = tmp_path / "atten.db"
     migrate(db_file)

@@ -7,9 +7,10 @@ Both are Gregorian. Time is the civil clock time, with no timezone shift.
 
 from datetime import date, datetime, timedelta
 
+from atten.persian import english_digits
+
 _GREGORIAN_MONTH_DAYS = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 _JALALI_MONTH_DAYS = (31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29)
-_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
 _INVALID_DATE = "تاریخ شمسی معتبر نیست."
 _INVALID_TIME = "ساعت معتبر نیست."
 
@@ -222,4 +223,4 @@ def _format_clock(value: datetime) -> str:
 
 
 def _normalize(text: str) -> str:
-    return " ".join(text.strip().translate(_DIGITS).split())
+    return " ".join(english_digits(text.strip()).split())

@@ -32,6 +32,9 @@ def load_ui_font() -> None:
 
 
 def apply_ui_font(master: tk.Misc) -> None:
+    from atten.ui.typing import install_persian_typing
+
+    install_persian_typing()
     import tkinter.font as tkfont
 
     for name in ("TkDefaultFont", "TkTextFont", "TkMenuFont", "TkHeadingFont"):

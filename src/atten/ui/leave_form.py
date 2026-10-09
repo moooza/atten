@@ -8,6 +8,7 @@ from tkinter import ttk
 from atten.dates import format_shamsi_date, parse_shamsi_date
 from atten.db.repository import add_leave, list_personnel, update_leave
 from atten.leave import compose_leave_minutes, format_leave_amount, split_leave_minutes
+from atten.persian import english_digits
 from atten.ui.fonts import UI_FONT
 from atten.ui.shamsi_date import ShamsiDateEntry
 
@@ -18,7 +19,6 @@ MUTED = "#64748b"
 LINE = "#d8dee6"
 ACCENT = "#14508a"
 DANGER = "#b42318"
-_DIGIT_MAP = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
 
 
 class LeaveForm(tk.Toplevel):
@@ -271,7 +271,7 @@ def _optional_number(text: str) -> int:
 
 
 def _whole_number(text: str) -> int | None:
-    cleaned = text.strip().translate(_DIGIT_MAP)
+    cleaned = english_digits(text.strip())
     if not cleaned.isdigit():
         return None
     return int(cleaned)

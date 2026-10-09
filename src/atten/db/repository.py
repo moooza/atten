@@ -11,7 +11,7 @@ from atten.dates import storage_date, storage_datetime
 from atten.db.connection import connect
 from atten.leave import YEARLY_LEAVE_MINUTES, format_leave_amount, shamsi_year_of, shamsi_year_span
 from atten.paths import db_path
-from atten.persian import persian_letters
+from atten.persian import english_digits, normalize_text
 
 
 @dataclass(frozen=True)
@@ -88,8 +88,8 @@ def _validated_fields(
     remote_id: str | None,
     mobile: str | None,
 ) -> tuple[str | None, str, str, float, str | None]:
-    first = persian_letters(first_name.strip())
-    last = persian_letters(last_name.strip())
+    first = normalize_text(first_name.strip())
+    last = normalize_text(last_name.strip())
     if not first:
         raise ValueError("نام را وارد کنید.")
     if not last:
@@ -117,7 +117,7 @@ def _timestamp() -> str:
 def _blank_to_none(value: str | None) -> str | None:
     if value is None:
         return None
-    text = persian_letters(value.strip())
+    text = normalize_text(value.strip())
     return text or None
 
 
@@ -554,7 +554,6 @@ def list_work_balances(
     return [dict(row) for row in rows]
 
 
-_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
 
 
 def save_work_balances(
@@ -637,7 +636,7 @@ def list_clock_events(db_file: Path | None = None) -> list[dict[str, object]]:
 
 
 def _required_text(value: object, message: str) -> str:
-    text = "" if value is None else persian_letters(str(value).strip())
+    text = "" if value is None else normalize_text(str(value).strip())
     if not text:
         raise ValueError(message)
     return text
@@ -656,7 +655,7 @@ def _storage_day(value: date | datetime | str) -> str:
 
 
 def _storage_clock(value: str) -> str:
-    text = str(value).strip().translate(_DIGITS)
+    text = english_digits(str(value).strip())
     pieces = text.split(":")
     if len(pieces) not in (2, 3) or not all(piece.isdigit() for piece in pieces):
         raise ValueError("ساعت معتبر نیست.")

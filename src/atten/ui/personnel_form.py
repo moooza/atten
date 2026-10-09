@@ -5,6 +5,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from atten.db.repository import add_personnel, update_personnel
+from atten.persian import english_digits
 from atten.ui.fonts import UI_FONT
 
 BACKGROUND = "#eef1f4"
@@ -15,7 +16,6 @@ LINE = "#d8dee6"
 
 ACCENT = "#14508a"
 DANGER = "#b42318"
-_DIGIT_MAP = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
 
 
 class PersonnelForm(tk.Toplevel):
@@ -230,7 +230,7 @@ def parse_work_duration(hours_text: str, minutes_text: str) -> float:
 
 
 def _whole_number(text: str) -> int | None:
-    cleaned = text.strip().translate(_DIGIT_MAP)
+    cleaned = english_digits(text.strip())
     if not cleaned.isdigit():
         return None
     return int(cleaned)

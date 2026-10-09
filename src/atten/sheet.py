@@ -10,8 +10,8 @@ from datetime import date, timedelta
 
 from atten.dates import storage_date
 from atten.leave import spread_leave_minutes
+from atten.persian import english_digits
 
-_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
 _INVALID_TIME = "ساعت معتبر نیست."
 
 
@@ -27,7 +27,7 @@ class SheetRow:
 
 
 def parse_clock(text: str) -> str | None:
-    cleaned = text.strip().translate(_DIGITS)
+    cleaned = english_digits(text.strip())
     if not cleaned:
         return None
     pieces = cleaned.split(":")
