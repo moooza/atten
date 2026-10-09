@@ -1,0 +1,34 @@
+---
+description: >-
+  Commit message format for this repo. Use only when creating a git commit
+  or drafting a commit message. Do not apply during implementation, review, or planning.
+alwaysApply: false
+---
+
+# Commit messages
+
+Apply only when the user asked to commit, or a plan todo is a commit. Do not draft this format while coding.
+
+**Subject:** one imperative line that states why. Match existing history. No `feat:` / `fix:` prefix.
+
+**Body:** blank line after the subject, then only sections that have items:
+
+- Added — new behavior or path
+- Changed — existing behavior that changed
+- Removed — something taken out
+- Fixed — a bug
+
+Each section is a heading plus `-` bullets. Omit empty sections.
+
+```
+Point the admin account menu at the logged-in employer so staff can edit their own profile from the header.
+
+Changed:
+- Wire Profile to admin.employers.edit for the authenticated employer
+
+Removed:
+- Drop Memberships, Orders, and Inbox placeholders until those screens exist
+
+Added:
+- Cover the account dropdown in the admin navbar unit tests
+```
