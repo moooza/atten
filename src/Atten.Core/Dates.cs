@@ -88,6 +88,66 @@ public static class Dates
         return JalaliToDate(year, month, day);
     }
 
+    /// <summary>
+    /// Digits from a typed Shamsi date, Persian/Arabic numerals included, at most YYYYMMDD.
+    /// </summary>
+    public static string ShamsiInputDigits(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        Span<char> digits = stackalloc char[8];
+        int count = 0;
+        foreach (char c in Persian.EnglishDigits(text))
+        {
+            if (c is < '0' or > '9')
+            {
+                continue;
+            }
+
+            digits[count] = c;
+            count += 1;
+            if (count == 8)
+            {
+                break;
+            }
+        }
+
+        return count == 0 ? string.Empty : new string(digits[..count]);
+    }
+
+    /// <summary>
+    /// Typed Shamsi date with slashes after the year and month: 1405/, 1405/07/, 1405/07/15.
+    /// </summary>
+    public static string FormatShamsiInput(string text)
+    {
+        string digits = ShamsiInputDigits(text);
+        if (digits.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        if (digits.Length < 4)
+        {
+            return digits;
+        }
+
+        if (digits.Length == 4)
+        {
+            return $"{digits}/";
+        }
+
+        if (digits.Length < 6)
+        {
+            return $"{digits[..4]}/{digits[4..]}";
+        }
+
+        if (digits.Length == 6)
+        {
+            return $"{digits[..4]}/{digits[4..]}/";
+        }
+
+        return $"{digits[..4]}/{digits[4..6]}/{digits[6..]}";
+    }
+
     public static DateTime ParseShamsiDateTime(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
@@ -180,6 +240,28 @@ public static class Dates
         }
 
         return days;
+    }
+
+    public static (DateOnly Start, DateOnly End) ShamsiMonthSpan(int year, int month)
+    {
+        IReadOnlyList<DateOnly> days = ShamsiMonthDates(year, month);
+        return (days[0], days[^1]);
+    }
+
+    public static string FormatShamsiMonth(int year, int month)
+    {
+        if (year < 1 || month < 1 || month > 12)
+        {
+            throw new FormatException(InvalidDate);
+        }
+
+        return $"{ShamsiMonthNames[month - 1]} {year}";
+    }
+
+    public static string FormatShamsiMonth(DateOnly value)
+    {
+        var (year, month, _) = ShamsiYmd(value);
+        return FormatShamsiMonth(year, month);
     }
 
     private static (int Year, int Month, int Day) GregorianToJalali(int year, int month, int day)

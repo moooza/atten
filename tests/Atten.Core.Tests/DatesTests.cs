@@ -48,6 +48,27 @@ public class DatesTests
         Assert.Equal("چهارشنبه", Dates.FormatShamsiWeekday(new DateOnly(2026, 10, 7)));
         Assert.Equal("جمعه", Dates.FormatShamsiWeekday("2026-10-09"));
         Assert.Equal("شنبه", Dates.FormatShamsiWeekday("2026-10-10"));
+        Assert.Equal((new DateOnly(2026, 9, 23), new DateOnly(2026, 10, 22)), Dates.ShamsiMonthSpan(1405, 7));
+        Assert.Equal("مهر 1405", Dates.FormatShamsiMonth(1405, 7));
+        Assert.Equal("مهر 1405", Dates.FormatShamsiMonth(new DateOnly(2026, 10, 7)));
+    }
+
+    [Fact]
+    public void ShamsiInputMaskInsertsSlashesAndKeepsEightDigits()
+    {
+        Assert.Equal(string.Empty, Dates.FormatShamsiInput(""));
+        Assert.Equal("140", Dates.FormatShamsiInput("140"));
+        Assert.Equal("1405/", Dates.FormatShamsiInput("1405"));
+        Assert.Equal("1405/0", Dates.FormatShamsiInput("14050"));
+        Assert.Equal("1405/07/", Dates.FormatShamsiInput("140507"));
+        Assert.Equal("1405/07/1", Dates.FormatShamsiInput("1405071"));
+        Assert.Equal("1405/07/15", Dates.FormatShamsiInput("14050715"));
+        Assert.Equal("1405/07/15", Dates.FormatShamsiInput("1405/07/15"));
+        Assert.Equal("1405/07/15", Dates.FormatShamsiInput("۱۴۰۵۰۷۱۵"));
+        Assert.Equal("1405/07/15", Dates.FormatShamsiInput("1405-07-15 extra"));
+        Assert.Equal("1405/07/15", Dates.FormatShamsiInput("1405071599"));
+        Assert.Equal("1405/", Dates.FormatShamsiInput("1405/"));
+        Assert.Equal("1405", Dates.ShamsiInputDigits("۱۴۰۵/"));
     }
 
     [Fact]

@@ -29,6 +29,8 @@ public sealed class ShamsiDateField : UserControl
     private readonly ShamsiCalendar _calendar = new();
     private readonly AppPopup _popup = new();
     private bool _syncing;
+    private string _lastText = string.Empty;
+    private string _lastDigits = string.Empty;
 
     public ShamsiDateField()
     {
@@ -139,12 +141,7 @@ public sealed class ShamsiDateField : UserControl
             return;
         }
 
-        SetValue(TextProperty, _dateText.Text);
-        DateOnly? parsed = TryParseShamsi(_dateText.Text);
-        _syncing = true;
-        StorageDate = parsed is { } day ? Dates.StorageDate(day) : null;
-        _syncing = false;
-        DateChanged?.Invoke(this, EventArgs.Empty);
+        ApplyTypedText(_dateText.Text ?? string.Empty, _dateText.SelectionStart);
     }
 
     private static void OnStorageDateChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
@@ -160,6 +157,7 @@ public sealed class ShamsiDateField : UserControl
         string shamsi = gregorian is { } day ? Dates.FormatShamsiDate(day) : string.Empty;
         field.SetValue(TextProperty, shamsi);
         field._dateText.Text = shamsi;
+        field.Remember(shamsi);
         field._syncing = false;
     }
 
@@ -171,11 +169,83 @@ public sealed class ShamsiDateField : UserControl
             return;
         }
 
-        string text = args.NewValue as string ?? string.Empty;
-        if (field._dateText.Text != text)
+        field.ApplyTypedText(args.NewValue as string ?? string.Empty, caret: null);
+    }
+
+    private void ApplyTypedText(string raw, int? caret)
+    {
+        int digitsBefore = DigitsBefore(raw, caret ?? raw.Length);
+        string digits = Dates.ShamsiInputDigits(raw);
+        if (digits.Length == _lastDigits.Length && raw.Length < _lastText.Length && digits.Length > 0)
         {
-            field._dateText.Text = text;
+            int removeAt = Math.Clamp(digitsBefore - 1, 0, digits.Length - 1);
+            digits = digits.Remove(removeAt, 1);
+            digitsBefore = removeAt;
         }
+
+        digitsBefore = Math.Clamp(digitsBefore, 0, digits.Length);
+        string formatted = Dates.FormatShamsiInput(digits);
+        int nextCaret = CaretAfterDigits(formatted, digitsBefore);
+
+        _syncing = true;
+        if (_dateText.Text != formatted)
+        {
+            _dateText.Text = formatted;
+        }
+
+        _dateText.SelectionStart = nextCaret;
+        _dateText.SelectionLength = 0;
+        SetValue(TextProperty, formatted);
+        DateOnly? parsed = digits.Length == 8 ? TryParseShamsi(formatted) : null;
+        StorageDate = parsed is { } day ? Dates.StorageDate(day) : null;
+        Remember(formatted);
+        _syncing = false;
+        DateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void Remember(string formatted)
+    {
+        _lastText = formatted;
+        _lastDigits = Dates.ShamsiInputDigits(formatted);
+    }
+
+    private static int DigitsBefore(string text, int caret)
+    {
+        int limit = Math.Clamp(caret, 0, text.Length);
+        return Dates.ShamsiInputDigits(text[..limit]).Length;
+    }
+
+    private static int CaretAfterDigits(string formatted, int digitCount)
+    {
+        if (digitCount <= 0)
+        {
+            return 0;
+        }
+
+        int seen = 0;
+        for (int i = 0; i < formatted.Length; i++)
+        {
+            if (formatted[i] is < '0' or > '9')
+            {
+                continue;
+            }
+
+            seen += 1;
+            if (seen != digitCount)
+            {
+                continue;
+            }
+
+            int index = i + 1;
+            if (index < formatted.Length && formatted[index] == '/')
+            {
+                index += 1;
+            }
+
+            return index;
+        }
+
+        return formatted.Length;
     }
 
     private static DateOnly? TryParseShamsi(string? text)
