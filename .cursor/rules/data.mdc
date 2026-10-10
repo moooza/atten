@@ -1,0 +1,16 @@
+---
+description: Numbered migrations, actor columns, and engine-specific SQL only at the connection
+alwaysApply: true
+---
+
+# Data
+
+Follow `dates.mdc` for stored timestamps. Do not convert calendars in SQL.
+
+**Migrations:** one new numbered script per schema change (see `src/Atten.Data/Migrations`). Never edit a migration that has already been applied. The app applies pending versions on startup. Record them in `schema_migrations`.
+
+**Actors:** do not rewrite applied migrations `001`–`011`. The first C# migration (`012`) adds `users` and `created_by` / `updated_by` on important writes. A new empty database still runs `001` through `012`. A single default user is enough until real login exists.
+
+**Engine:** `AUTOINCREMENT`, `PRAGMA`, and database date functions stay next to the connection. Domain code uses Gregorian text dates, not the engine. EF Core or hand-written SQL both live only in `Atten.Data`.
+
+Do not put the SQLite file on a network share. Do not ship a multi-user price list on SQLite. Those wait for a later central PostgreSQL move.

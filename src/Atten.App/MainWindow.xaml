@@ -1,0 +1,59 @@
+<Window
+    x:Class="Atten.App.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:theme="using:Atten.UI.Theme">
+    <Grid x:Name="Root" Background="{ThemeResource Surface}" FlowDirection="RightToLeft">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid
+            x:Name="Toolbar"
+            Grid.Row="0"
+            Height="{StaticResource ShellToolbarHeight}"
+            Background="{ThemeResource Surface}"
+            Padding="16,0">
+            <StackPanel
+                x:Name="NavBar"
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Spacing="4" />
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Spacing="8">
+                <TextBlock
+                    Text="قالب"
+                    VerticalAlignment="Center"
+                    FontFamily="{StaticResource AppFontFamily}"
+                    FontSize="{StaticResource BodyFontSize}"
+                    Foreground="{ThemeResource Muted}" />
+                <theme:AppComboBox x:Name="ThemePicker" MinWidth="120" />
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="1" Height="1" Background="{ThemeResource Line}" />
+
+        <TextBlock
+            x:Name="NoticeBanner"
+            Grid.Row="2"
+            Padding="16,8"
+            FontFamily="{StaticResource AppFontFamily}"
+            FontSize="{StaticResource BodyFontSize}"
+            Foreground="{ThemeResource Muted}"
+            TextAlignment="Right"
+            TextWrapping="Wrap"
+            Visibility="Collapsed" />
+
+        <Frame
+            x:Name="ContentFrame"
+            Grid.Row="3"
+            Background="{ThemeResource Surface}" />
+    </Grid>
+</Window>

@@ -1,0 +1,193 @@
+<Page
+    x:Class="Atten.App.Leaves.LeavesPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Atten.App.Leaves"
+    xmlns:shared="using:Atten.App.Shared"
+    xmlns:theme="using:Atten.UI.Theme"
+    Background="{ThemeResource Surface}"
+    FlowDirection="RightToLeft">
+    <Grid Padding="{StaticResource PagePadding}">
+        <Grid x:Name="ListRoot">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid Margin="{StaticResource HeaderBottomMargin}">
+                <StackPanel
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="{StaticResource PageGap}">
+                    <TextBlock Text="مرخصی‌ها" Style="{StaticResource AppTitleText}" />
+                    <TextBlock x:Name="CountText" Style="{StaticResource AppCaptionText}" />
+                </StackPanel>
+                <StackPanel
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Left"
+                    Spacing="{StaticResource FieldGap}">
+                    <TextBlock x:Name="Notice" Style="{StaticResource AppDangerText}" />
+                    <theme:AppButton
+                        Content="ویرایش"
+                        Kind="Secondary"
+                        Click="OnEdit" />
+                    <theme:AppButton
+                        Content="ثبت مرخصی"
+                        Kind="Primary"
+                        Click="OnAdd" />
+                </StackPanel>
+            </Grid>
+
+            <StackPanel
+                Grid.Row="1"
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="{StaticResource PageGap}"
+                Margin="{StaticResource HeaderBottomMargin}">
+                <TextBlock
+                    Text="پرسنل"
+                    Style="{StaticResource AppFieldLabel}"
+                    Margin="0"
+                    VerticalAlignment="Center" />
+                <shared:PersonnelPicker x:Name="PersonPicker" />
+                <theme:AppYearDropdown x:Name="YearDropdown" VerticalAlignment="Center" />
+            </StackPanel>
+
+            <ItemsControl
+                x:Name="YearCards"
+                Grid.Row="2"
+                Margin="{StaticResource HeaderBottomMargin}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="{StaticResource HeaderBottomMargin}">
+                            <TextBlock Text="{Binding Title}" Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock
+                                Text="{Binding Notice}"
+                                Style="{StaticResource AppInkText}"
+                                Visibility="{Binding NoticeVisibility}"
+                                Margin="{StaticResource FieldHintMargin}" />
+                            <Grid ColumnSpacing="{StaticResource FieldGap}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Style="{StaticResource AppPanel}" Padding="{StaticResource SummaryCardPadding}">
+                                    <StackPanel>
+                                        <TextBlock Text="ذخیره (از سال قبل)" Style="{StaticResource AppCaptionText}" />
+                                        <TextBlock Text="{Binding Carry}" Style="{StaticResource AppInkText}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="1" Style="{StaticResource AppPanel}" Padding="{StaticResource SummaryCardPadding}">
+                                    <StackPanel>
+                                        <TextBlock Text="استحقاق" Style="{StaticResource AppCaptionText}" />
+                                        <TextBlock Text="{Binding Earned}" Style="{StaticResource AppInkText}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="2" Style="{StaticResource AppPanel}" Padding="{StaticResource SummaryCardPadding}">
+                                    <StackPanel>
+                                        <TextBlock Text="ثبت شده" Style="{StaticResource AppCaptionText}" />
+                                        <TextBlock Text="{Binding Used}" Style="{StaticResource AppInkText}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="3" Style="{StaticResource AppPanel}" Padding="{StaticResource SummaryCardPadding}">
+                                    <StackPanel>
+                                        <TextBlock Text="مانده" Style="{StaticResource AppCaptionText}" />
+                                        <TextBlock Text="{Binding Remaining}" Style="{StaticResource AppInkText}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="4" Style="{StaticResource AppPanel}" Padding="{StaticResource SummaryCardPadding}">
+                                    <StackPanel>
+                                        <TextBlock Text="انتقال (به سال بعد)" Style="{StaticResource AppCaptionText}" />
+                                        <TextBlock Text="{Binding Transfer}" Style="{StaticResource AppInkText}" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock
+                x:Name="EmptyText"
+                Grid.Row="3"
+                Text="یک پرسنل را انتخاب کنید."
+                Style="{StaticResource AppCaptionText}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center" />
+
+            <Border x:Name="TablePanel" Grid.Row="3" Style="{StaticResource AppPanel}" Visibility="Collapsed">
+                <ListView
+                    x:Name="LeavesList"
+                    Background="{ThemeResource Surface}"
+                    BorderThickness="0"
+                    SelectionMode="Single"
+                    DoubleTapped="OnRowDoubleTapped"
+                    SelectionChanged="OnSelectionChanged">
+                    <ListView.Header>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid Padding="{StaticResource ListCellPadding}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="0.6*" />
+                                    <ColumnDefinition Width="1.1*" />
+                                    <ColumnDefinition Width="1.1*" />
+                                    <ColumnDefinition Width="1.6*" />
+                                    <ColumnDefinition Width="1.3*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="شناسه" Style="{StaticResource AppListHeaderText}" />
+                                <TextBlock Grid.Column="1" Text="تاریخ شروع" Style="{StaticResource AppListHeaderText}" />
+                                <TextBlock Grid.Column="2" Text="تاریخ پایان" Style="{StaticResource AppListHeaderText}" />
+                                <TextBlock Grid.Column="3" Text="میزان" Style="{StaticResource AppListHeaderText}" />
+                                <TextBlock Grid.Column="4" Text="تاریخ افزودن" Style="{StaticResource AppListHeaderText}" />
+                            </Grid>
+                            <Border
+                                Grid.Row="1"
+                                Height="1"
+                                Background="{ThemeResource Line}" />
+                        </Grid>
+                    </ListView.Header>
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem" BasedOn="{StaticResource AppListViewItem}" />
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="local:LeaveRow">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="0.6*" />
+                                    <ColumnDefinition Width="1.1*" />
+                                    <ColumnDefinition Width="1.1*" />
+                                    <ColumnDefinition Width="1.6*" />
+                                    <ColumnDefinition Width="1.3*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{x:Bind IdText}" Style="{StaticResource AppListCellText}" />
+                                <TextBlock Grid.Column="1" Text="{x:Bind StartDate}" Style="{StaticResource AppListCellText}" />
+                                <TextBlock Grid.Column="2" Text="{x:Bind EndDate}" Style="{StaticResource AppListCellText}" />
+                                <TextBlock Grid.Column="3" Text="{x:Bind Amount}" Style="{StaticResource AppListCellText}" />
+                                <TextBlock Grid.Column="4" Text="{x:Bind CreatedAt}" Style="{StaticResource AppListCellText}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Border>
+        </Grid>
+
+        <ScrollViewer
+            x:Name="FormHost"
+            Visibility="Collapsed"
+            VerticalScrollBarVisibility="Auto">
+            <local:LeaveForm
+                x:Name="Editor"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Margin="{StaticResource FormHostMargin}" />
+        </ScrollViewer>
+    </Grid>
+</Page>

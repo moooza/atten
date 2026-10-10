@@ -1,0 +1,112 @@
+<Page
+    x:Class="Atten.App.ClockEvents.ClockEventsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Atten.App.ClockEvents"
+    xmlns:theme="using:Atten.UI.Theme"
+    Background="{ThemeResource Surface}"
+    FlowDirection="RightToLeft">
+    <Grid Padding="{StaticResource PagePadding}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Margin="{StaticResource HeaderBottomMargin}">
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="{StaticResource PageGap}">
+                <TextBlock Text="ورود و خروج" Style="{StaticResource AppTitleText}" />
+                <TextBlock x:Name="CountText" Style="{StaticResource AppCaptionText}" />
+            </StackPanel>
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Left"
+                Spacing="{StaticResource FieldGap}">
+                <TextBlock x:Name="Notice" Style="{StaticResource AppInkText}" />
+                <theme:AppButton
+                    Content="بارگذاری فایل"
+                    Kind="Primary"
+                    Click="OnImport" />
+            </StackPanel>
+        </Grid>
+
+        <TextBlock
+            x:Name="EmptyText"
+            Grid.Row="1"
+            Text="هنوز ورود و خروجی ثبت نشده است."
+            Style="{StaticResource AppCaptionText}"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Visibility="Collapsed" />
+
+        <Border x:Name="TablePanel" Grid.Row="1" Style="{StaticResource AppPanel}">
+            <ListView
+                x:Name="EventsList"
+                Background="{ThemeResource Surface}"
+                BorderThickness="0"
+                SelectionMode="None">
+                <ListView.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid Padding="{StaticResource ListCellPadding}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="0.6*" />
+                                <ColumnDefinition Width="1.1*" />
+                                <ColumnDefinition Width="1.4*" />
+                                <ColumnDefinition Width="0.8*" />
+                                <ColumnDefinition Width="1.0*" />
+                                <ColumnDefinition Width="0.8*" />
+                                <ColumnDefinition Width="1.3*" />
+                                <ColumnDefinition Width="1.4*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="شناسه" Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock Grid.Column="1" Text="کد پرسنلی" Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock Grid.Column="2" Text="نام" Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock Grid.Column="3" Text="روز" Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock Grid.Column="4" Text="تاریخ" Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock Grid.Column="5" Text="ساعت" Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock Grid.Column="6" Text="تاریخ افزودن" Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock Grid.Column="7" Text="تاریخ به‌روزرسانی" Style="{StaticResource AppListHeaderText}" />
+                        </Grid>
+                        <Border
+                            Grid.Row="1"
+                            Height="1"
+                            Background="{ThemeResource Line}" />
+                    </Grid>
+                </ListView.Header>
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem" BasedOn="{StaticResource AppListViewItem}" />
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="local:ClockEventRow">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="0.6*" />
+                                <ColumnDefinition Width="1.1*" />
+                                <ColumnDefinition Width="1.4*" />
+                                <ColumnDefinition Width="0.8*" />
+                                <ColumnDefinition Width="1.0*" />
+                                <ColumnDefinition Width="0.8*" />
+                                <ColumnDefinition Width="1.3*" />
+                                <ColumnDefinition Width="1.4*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{x:Bind IdText}" Style="{StaticResource AppListCellText}" />
+                            <TextBlock Grid.Column="1" Text="{x:Bind RemoteId}" Style="{StaticResource AppListCellText}" />
+                            <TextBlock Grid.Column="2" Text="{x:Bind Name}" Style="{StaticResource AppListCellText}" />
+                            <TextBlock Grid.Column="3" Text="{x:Bind Weekday}" Style="{StaticResource AppListCellText}" />
+                            <TextBlock Grid.Column="4" Text="{x:Bind Date}" Style="{StaticResource AppListCellText}" />
+                            <TextBlock Grid.Column="5" Text="{x:Bind Time}" Style="{StaticResource AppListCellText}" />
+                            <TextBlock Grid.Column="6" Text="{x:Bind CreatedAt}" Style="{StaticResource AppListCellText}" />
+                            <TextBlock Grid.Column="7" Text="{x:Bind UpdatedAt}" Style="{StaticResource AppListCellText}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Border>
+    </Grid>
+</Page>

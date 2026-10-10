@@ -1,0 +1,98 @@
+<Page
+    x:Class="Atten.App.Calculation.CalculationPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:leaves="using:Atten.App.Leaves"
+    xmlns:shared="using:Atten.App.Shared"
+    xmlns:theme="using:Atten.UI.Theme"
+    Background="{ThemeResource Surface}"
+    FlowDirection="RightToLeft">
+    <Page.KeyboardAccelerators>
+        <KeyboardAccelerator Key="Enter" Invoked="OnEnterAccelerator" />
+    </Page.KeyboardAccelerators>
+    <Grid Padding="{StaticResource PagePadding}">
+        <Grid x:Name="SheetRoot">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid Margin="{StaticResource HeaderBottomMargin}">
+                <TextBlock
+                    Text="محاسبه"
+                    Style="{StaticResource AppTitleText}"
+                    HorizontalAlignment="Right" />
+                <TextBlock
+                    x:Name="Notice"
+                    Style="{StaticResource AppDangerText}"
+                    HorizontalAlignment="Left" />
+            </Grid>
+
+            <ScrollViewer
+                Grid.Row="1"
+                Margin="{StaticResource HeaderBottomMargin}"
+                HorizontalScrollBarVisibility="Auto"
+                VerticalScrollBarVisibility="Disabled">
+                <StackPanel
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="{StaticResource PageGap}">
+                    <TextBlock
+                        Text="کارمند"
+                        Style="{StaticResource AppFieldLabel}"
+                        Margin="0"
+                        VerticalAlignment="Center" />
+                    <shared:PersonnelPicker x:Name="PersonPicker" />
+                    <TextBlock
+                        Text="از تاریخ"
+                        Style="{StaticResource AppFieldLabel}"
+                        Margin="0"
+                        VerticalAlignment="Center" />
+                    <theme:ShamsiDateField x:Name="StartField" />
+                    <TextBlock
+                        Text="تا تاریخ"
+                        Style="{StaticResource AppFieldLabel}"
+                        Margin="0"
+                        VerticalAlignment="Center" />
+                    <theme:ShamsiDateField x:Name="EndField" />
+                    <theme:AppButton
+                        Content="نمایش"
+                        Kind="Primary"
+                        Click="OnShow" />
+                </StackPanel>
+            </ScrollViewer>
+
+            <TextBlock
+                x:Name="EmptyText"
+                Grid.Row="2"
+                Text="کارمند و بازه تاریخ را انتخاب کنید."
+                Style="{StaticResource AppCaptionText}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center" />
+
+            <Border
+                x:Name="TablePanel"
+                Grid.Row="2"
+                Style="{StaticResource AppPanel}"
+                Visibility="Collapsed">
+                <ScrollViewer
+                    HorizontalScrollBarVisibility="Auto"
+                    VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="SheetHost" />
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <ScrollViewer
+            x:Name="FormHost"
+            Visibility="Collapsed"
+            VerticalScrollBarVisibility="Auto">
+            <leaves:LeaveForm
+                x:Name="Editor"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Margin="{StaticResource FormHostMargin}" />
+        </ScrollViewer>
+    </Grid>
+</Page>

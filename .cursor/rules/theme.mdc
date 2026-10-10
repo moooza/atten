@@ -1,0 +1,16 @@
+---
+description: Shared light/dark tokens and App* controls; no hardcoded colors in screens
+alwaysApply: true
+---
+
+# Theme
+
+Screens do not set raw colors, fonts, or paddings. Use named tokens: `Surface`, `Ink`, `Muted`, `Line`, `Accent`, `Danger`, `Success`.
+
+Light and dark are two dictionaries (`Theme.Light` / `Theme.Dark`) with the same token names (WinUI 3 `ResourceDictionary`). The user's theme choice is local settings, not domain logic.
+
+Before the first real form, ship `AppButton`, `AppTextBox`, `AppComboBox`, `ShamsiDateField`, and a popup/dropdown with no window chrome. New screens use implicit styles or these controls. A hardcoded hex in a page means the skeleton is incomplete.
+
+`ShamsiDateField` draws the field and calendar. It calls `Atten.Core` for format, parse, and month days. It does not contain calendar math, leave rules, or SQL.
+
+A new visual control is added to Theme first, then used by a feature. Dropdowns that need checkboxes are a themed popup, not a `Toplevel`/dialog with a title bar. A picker that loads records (personnel) is not Theme; it lives in `Atten.App/Shared`.

@@ -1,0 +1,84 @@
+<UserControl
+    x:Class="Atten.App.Personnel.PersonnelForm"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:theme="using:Atten.UI.Theme"
+    FlowDirection="RightToLeft">
+    <UserControl.KeyboardAccelerators>
+        <KeyboardAccelerator Key="Enter" Invoked="OnEnterAccelerator" />
+        <KeyboardAccelerator Key="Escape" Invoked="OnEscapeAccelerator" />
+    </UserControl.KeyboardAccelerators>
+    <Border
+        Style="{StaticResource AppPanel}"
+        Padding="{StaticResource FormPadding}"
+        MaxWidth="{StaticResource FormMaxWidth}"
+        HorizontalAlignment="Center">
+        <StackPanel>
+            <TextBlock x:Name="Heading" Style="{StaticResource AppTitleText}" />
+
+            <TextBlock Text="نام" Style="{StaticResource AppFieldLabel}" />
+            <theme:AppTextBox x:Name="FirstNameBox" HorizontalAlignment="Stretch" />
+
+            <TextBlock Text="نام خانوادگی" Style="{StaticResource AppFieldLabel}" />
+            <theme:AppTextBox x:Name="LastNameBox" HorizontalAlignment="Stretch" />
+
+            <TextBlock Text="میزان ساعت کاری" Style="{StaticResource AppFieldLabel}" />
+            <StackPanel Orientation="Horizontal" Spacing="{StaticResource FieldGap}">
+                <theme:AppTextBox
+                    x:Name="HoursBox"
+                    Width="{StaticResource CompactFieldWidth}"
+                    TextAlignment="Center"
+                    BeforeTextChanging="OnHoursChanging" />
+                <TextBlock
+                    Text="ساعت"
+                    Style="{StaticResource AppListCellText}"
+                    VerticalAlignment="Center" />
+                <theme:AppTextBox
+                    x:Name="MinutesBox"
+                    Width="{StaticResource CompactFieldWidth}"
+                    TextAlignment="Center"
+                    BeforeTextChanging="OnMinutesChanging" />
+                <TextBlock
+                    Text="دقیقه"
+                    Style="{StaticResource AppListCellText}"
+                    VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock
+                Text="دقیقه را از ۰ تا ۵۹ وارد کنید."
+                Style="{StaticResource AppCaptionText}"
+                Margin="{StaticResource FieldHintMargin}" />
+
+            <TextBlock Text="کد پرسنلی (اختیاری)" Style="{StaticResource AppFieldLabel}" />
+            <theme:AppTextBox x:Name="RemoteIdBox" HorizontalAlignment="Stretch" />
+
+            <TextBlock Text="شماره همراه (اختیاری)" Style="{StaticResource AppFieldLabel}" />
+            <theme:AppTextBox x:Name="MobileBox" HorizontalAlignment="Stretch" />
+
+            <TextBlock Text="تاریخ شروع همکاری" Style="{StaticResource AppFieldLabel}" />
+            <theme:ShamsiDateField x:Name="StartField" HorizontalAlignment="Stretch" />
+
+            <TextBlock Text="تاریخ پایان همکاری" Style="{StaticResource AppFieldLabel}" />
+            <theme:ShamsiDateField x:Name="EndField" HorizontalAlignment="Stretch" />
+
+            <TextBlock
+                x:Name="ErrorText"
+                Style="{StaticResource AppDangerText}"
+                Margin="0,8,0,0" />
+
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="{StaticResource FieldGap}"
+                Margin="{StaticResource FormActionsMargin}">
+                <theme:AppButton
+                    Content="ذخیره"
+                    Kind="Primary"
+                    Click="OnSave" />
+                <theme:AppButton
+                    Content="انصراف"
+                    Kind="Secondary"
+                    Click="OnCancel" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

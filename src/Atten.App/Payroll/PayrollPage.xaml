@@ -1,0 +1,153 @@
+<Page
+    x:Class="Atten.App.Payroll.PayrollPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Atten.App.Payroll"
+    xmlns:shared="using:Atten.App.Shared"
+    xmlns:theme="using:Atten.UI.Theme"
+    Background="{ThemeResource Surface}"
+    FlowDirection="RightToLeft">
+    <Grid Padding="{StaticResource PagePadding}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Margin="{StaticResource HeaderBottomMargin}">
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="{StaticResource PageGap}">
+                <TextBlock Text="حقوق" Style="{StaticResource AppTitleText}" />
+                <TextBlock x:Name="CountText" Style="{StaticResource AppCaptionText}" />
+            </StackPanel>
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Left"
+                Spacing="{StaticResource FieldGap}">
+                <TextBlock x:Name="Notice" Style="{StaticResource AppDangerText}" />
+                <theme:AppButton
+                    Content="بازگشت به پیش‌نویس"
+                    Kind="Secondary"
+                    Click="OnReopen" />
+                <theme:AppButton
+                    Content="تأیید"
+                    Kind="Primary"
+                    Click="OnConfirm" />
+                <theme:AppButton
+                    Content="محاسبه پیش‌نویس"
+                    Kind="Secondary"
+                    Click="OnDraft" />
+            </StackPanel>
+        </Grid>
+
+        <StackPanel
+            Grid.Row="1"
+            Orientation="Horizontal"
+            HorizontalAlignment="Right"
+            Spacing="{StaticResource PageGap}"
+            Margin="{StaticResource HeaderBottomMargin}">
+            <TextBlock
+                Text="پرسنل"
+                Style="{StaticResource AppFieldLabel}"
+                Margin="0"
+                VerticalAlignment="Center" />
+            <shared:PersonnelPicker x:Name="PersonPicker" />
+            <theme:AppComboBox
+                x:Name="YearCombo"
+                Width="100"
+                VerticalAlignment="Center" />
+            <theme:AppComboBox
+                x:Name="MonthCombo"
+                Width="140"
+                VerticalAlignment="Center"
+                DisplayMemberPath="Name"
+                SelectedValuePath="Number" />
+        </StackPanel>
+
+        <TextBlock
+            Grid.Row="2"
+            Text="محاسبه از کارکرد ماه و مانده مرخصی ساخته می‌شود. تأیید، پیش‌نویس را برای همین کاربر قفل می‌کند."
+            Style="{StaticResource AppCaptionText}"
+            Margin="{StaticResource HeaderBottomMargin}" />
+
+        <TextBlock
+            x:Name="EmptyText"
+            Grid.Row="3"
+            Text="یک پرسنل را انتخاب کنید."
+            Style="{StaticResource AppCaptionText}"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center" />
+
+        <Border x:Name="TablePanel" Grid.Row="3" Style="{StaticResource AppPanel}" Visibility="Collapsed">
+            <ListView
+                x:Name="PayrollList"
+                Background="{ThemeResource Surface}"
+                BorderThickness="0"
+                SelectionMode="Single"
+                SelectionChanged="OnSelectionChanged">
+                <ListView.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid Padding="{StaticResource ListCellPadding}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="0.8*" />
+                                <ColumnDefinition Width="0.8*" />
+                                <ColumnDefinition Width="1.4*" />
+                                <ColumnDefinition Width="1.4*" />
+                                <ColumnDefinition Width="0.9*" />
+                                <ColumnDefinition Width="0.9*" />
+                                <ColumnDefinition Width="1.3*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="دوره" Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock Grid.Column="1" Text="اضافه" Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock Grid.Column="2" Text="کسری" Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock Grid.Column="3" Text="مرخصی ماه" Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock Grid.Column="4" Text="مانده مرخصی" Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock Grid.Column="5" Text="وضعیت" Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock Grid.Column="6" Text="ثبت‌کننده" Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock Grid.Column="7" Text="آخرین تغییر" Style="{StaticResource AppListHeaderText}" />
+                        </Grid>
+                        <Border
+                            Grid.Row="1"
+                            Height="1"
+                            Background="{ThemeResource Line}" />
+                    </Grid>
+                </ListView.Header>
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem" BasedOn="{StaticResource AppListViewItem}" />
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="local:PayrollRow">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="0.8*" />
+                                <ColumnDefinition Width="0.8*" />
+                                <ColumnDefinition Width="1.4*" />
+                                <ColumnDefinition Width="1.4*" />
+                                <ColumnDefinition Width="0.9*" />
+                                <ColumnDefinition Width="0.9*" />
+                                <ColumnDefinition Width="1.3*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{x:Bind Period}" Style="{StaticResource AppListCellText}" />
+                            <TextBlock Grid.Column="1" Text="{x:Bind Overtime}" Style="{StaticResource AppListCellText}" />
+                            <TextBlock Grid.Column="2" Text="{x:Bind Deficit}" Style="{StaticResource AppListCellText}" />
+                            <TextBlock Grid.Column="3" Text="{x:Bind LeaveAmount}" Style="{StaticResource AppListCellText}" />
+                            <TextBlock Grid.Column="4" Text="{x:Bind Remaining}" Style="{StaticResource AppListCellText}" />
+                            <TextBlock Grid.Column="5" Text="{x:Bind Status}" Style="{StaticResource AppListCellText}" />
+                            <TextBlock Grid.Column="6" Text="{x:Bind Actor}" Style="{StaticResource AppListCellText}" />
+                            <TextBlock Grid.Column="7" Text="{x:Bind UpdatedAt}" Style="{StaticResource AppListCellText}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Border>
+    </Grid>
+</Page>

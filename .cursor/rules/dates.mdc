@@ -11,6 +11,6 @@ User-facing dates and times are Shamsi on screen only. The database and every se
 - Store a datetime as text `YYYY-MM-DDTHH:MM:SS`, for example `2026-10-07T16:30:00`.
 - Keep the civil clock time. Do not shift it to UTC. `schema_migrations.applied_at` is the exception: it is an internal UTC timestamp.
 - Never write a Shamsi string into the database or onto an external API.
-- Display with `format_shamsi_date` / `format_shamsi_datetime` from `atten.dates`.
+- Display with `format_shamsi_date` / `format_shamsi_datetime` from `Atten.Core`.
 - When a Shamsi value is chosen or typed, convert it with `parse_shamsi_date` / `parse_shamsi_datetime` before insert or update, then store the Gregorian text.
-- Do not convert calendars inside SQL or widget code.
+- Do not convert calendars inside SQL. A date widget must call Core; it must not implement month tables or Shamsi math itself. Engine date functions stay in the connection layer.

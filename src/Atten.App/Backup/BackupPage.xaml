@@ -1,0 +1,149 @@
+<Page
+    x:Class="Atten.App.Backup.BackupPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:theme="using:Atten.UI.Theme"
+    Background="{ThemeResource Surface}"
+    FlowDirection="RightToLeft">
+    <Grid Padding="{StaticResource PagePadding}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Margin="{StaticResource HeaderBottomMargin}">
+            <TextBlock
+                Text="پشتیبان"
+                Style="{StaticResource AppTitleText}"
+                HorizontalAlignment="Right" />
+            <TextBlock
+                x:Name="Notice"
+                Style="{StaticResource AppDangerText}"
+                HorizontalAlignment="Left" />
+        </Grid>
+
+        <ScrollViewer
+            Grid.Row="1"
+            VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="{StaticResource PageGap}">
+                <Border Style="{StaticResource AppPanel}" Padding="{StaticResource FormPadding}">
+                    <StackPanel>
+                        <TextBlock
+                            Text="ایجاد نسخهٔ پشتیبان"
+                            Style="{StaticResource AppListHeaderText}" />
+                        <TextBlock
+                            Text="یک پوشه انتخاب کنید تا نسخهٔ کامل پایگاه داده آنجا ذخیره شود. تاریخ و ساعت ساخت در نام فایل می‌آید."
+                            Style="{StaticResource AppCaptionText}"
+                            TextWrapping="Wrap"
+                            Margin="{StaticResource FieldHintMargin}" />
+                        <Grid Margin="{StaticResource FormActionsMargin}">
+                            <theme:AppButton
+                                Content="ایجاد نسخهٔ پشتیبان"
+                                Kind="Primary"
+                                HorizontalAlignment="Left"
+                                Click="OnCreateBackup" />
+                            <StackPanel
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Spacing="{StaticResource FieldGap}">
+                                <theme:AppButton
+                                    Content="انتخاب مسیر"
+                                    Kind="Secondary"
+                                    Click="OnChooseFolder" />
+                                <TextBlock
+                                    x:Name="FolderLabel"
+                                    Text="مسیری انتخاب نشده است."
+                                    Style="{StaticResource AppCaptionText}"
+                                    VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource AppPanel}" Padding="{StaticResource FormPadding}">
+                    <StackPanel>
+                        <TextBlock
+                            Text="بازگردانی نسخهٔ پشتیبان"
+                            Style="{StaticResource AppListHeaderText}" />
+                        <TextBlock
+                            Text="یک فایل نسخهٔ پشتیبان انتخاب کنید. پیش از بازگردانی، تأیید گرفته می‌شود چون همهٔ اطلاعات فعلی حذف خواهند شد."
+                            Style="{StaticResource AppCaptionText}"
+                            TextWrapping="Wrap"
+                            Margin="{StaticResource FieldHintMargin}" />
+                        <Grid Margin="{StaticResource FormActionsMargin}">
+                            <theme:AppButton
+                                Content="بازگردانی"
+                                Kind="Danger"
+                                HorizontalAlignment="Left"
+                                Click="OnRestore" />
+                            <StackPanel
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Spacing="{StaticResource FieldGap}">
+                                <theme:AppButton
+                                    Content="انتخاب فایل"
+                                    Kind="Secondary"
+                                    Click="OnChooseFile" />
+                                <TextBlock
+                                    x:Name="FileLabel"
+                                    Text="فایلی انتخاب نشده است."
+                                    Style="{StaticResource AppCaptionText}"
+                                    VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource AppPanel}" Padding="{StaticResource FormPadding}">
+                    <StackPanel>
+                        <TextBlock
+                            Text="بررسی سلامت"
+                            Style="{StaticResource AppListHeaderText}" />
+                        <TextBlock
+                            Text="یک فایل نسخهٔ پشتیبان انتخاب کنید تا همهٔ جدول‌ها و رکوردها، به‌همراه ساختار فایل و ارتباط جدول‌ها، بررسی شود."
+                            Style="{StaticResource AppCaptionText}"
+                            TextWrapping="Wrap"
+                            Margin="{StaticResource FieldHintMargin}" />
+                        <Grid Margin="{StaticResource FormActionsMargin}">
+                            <theme:AppButton
+                                x:Name="CheckButton"
+                                Content="بررسی سلامت"
+                                Kind="Primary"
+                                HorizontalAlignment="Left"
+                                Click="OnCheck" />
+                            <StackPanel
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Spacing="{StaticResource FieldGap}">
+                                <theme:AppButton
+                                    Content="انتخاب فایل"
+                                    Kind="Secondary"
+                                    Click="OnChooseCheckFile" />
+                                <TextBlock
+                                    x:Name="CheckFileLabel"
+                                    Text="فایلی انتخاب نشده است."
+                                    Style="{StaticResource AppCaptionText}"
+                                    VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+                        <ProgressBar
+                            x:Name="CheckProgress"
+                            Margin="{StaticResource FormActionsMargin}"
+                            Minimum="0"
+                            Maximum="1"
+                            Value="0"
+                            Foreground="{ThemeResource Accent}"
+                            Background="{ThemeResource Line}" />
+                        <TextBlock
+                            x:Name="CheckStatus"
+                            Style="{StaticResource AppCaptionText}"
+                            Margin="{StaticResource FieldHintMargin}" />
+                        <TextBlock
+                            x:Name="CheckResult"
+                            Style="{StaticResource AppInkText}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

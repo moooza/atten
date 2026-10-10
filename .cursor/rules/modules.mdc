@@ -1,0 +1,18 @@
+---
+description: Features are packages; shared widgets and rules live once and are reused
+alwaysApply: true
+---
+
+# Modules
+
+Each capability is one package: attendance, leave, payroll, later pricing. A feature folder owns its screens and calls Core/Data services. It does not copy another feature's UI.
+
+Shared pieces live once:
+
+- Shamsi date field — Theme control; conversion in Core.
+- Leave amount formatting — Core; screens only display it.
+- Personnel picker — `Atten.App/Shared`, not Theme and not inside the Personnel folder. Leave and calculation use this control; they do not open the Personnel window.
+
+Other modules call the service (for example payroll reads leave balance), never the other module's window.
+
+A new standard (date field, button, validation) is added to Theme or Core first, then every feature uses that. Do not add a second date entry or a second primary button style in a feature page.

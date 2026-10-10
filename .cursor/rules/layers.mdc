@@ -1,0 +1,21 @@
+---
+description: Layer and project structure so UI, domain, and storage stay replaceable
+alwaysApply: true
+---
+
+# Layers
+
+One desktop product. Swap the UI or the database engine without rewriting domain logic.
+
+**C# projects** (WinUI 3 / Windows App SDK):
+
+- `Atten.Core` — leave, sheet, dates, validation. No UI, SQLite, or file paths.
+- `Atten.Data` — repository, migrations, connection, backup. No windows, colors, or controls.
+- `Atten.UI.Theme` — tokens and `App*` controls. No business rules, SQL, or Data. May reference `Atten.Core` only for dates (format, parse, month days).
+- `Atten.App` — feature screens and `Shared` pickers. Calls services only. No SQL, `PRAGMA`, or `atten.db` paths.
+
+Pages read and write only through services or the repository. `data/atten.db`, WAL, and file snapshots stay in the data/connection layer (`src/Atten.Data`).
+
+Domain tests must pass without opening a window.
+
+A later UI toolkit change touches only App and Theme. A later PostgreSQL move touches only Data.
