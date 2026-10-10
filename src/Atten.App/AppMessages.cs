@@ -192,6 +192,11 @@ public static class AppMessages
         return $"معادل: {Leave.FormatLeaveAmount(minutes)}";
     }
 
+    public static string LeaveBalanceNow(int year, int minutes)
+    {
+        return $"مانده مرخصی سال {year}: {Leave.FormatSignedLeaveAmount(minutes)}";
+    }
+
     public static string LeaveRemaining(int beforeTransfer, int afterTransfer)
     {
         return $"{LeaveBeforeTransfer} {Leave.FormatSignedLeaveAmount(beforeTransfer)}\n{LeaveAfterTransfer} {Leave.FormatSignedLeaveAmount(afterTransfer)}";

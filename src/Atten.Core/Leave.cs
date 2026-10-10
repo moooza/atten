@@ -200,6 +200,20 @@ public static class Leave
         return days * LeaveDayMinutes + hours * 60 + minutes;
     }
 
+    /// <summary>
+    /// Inclusive calendar days between two dates. Same day or a reversed range
+    /// is empty so the days field can stay blank.
+    /// </summary>
+    public static int? CalendarDaySpan(DateOnly start, DateOnly end)
+    {
+        if (end <= start)
+        {
+            return null;
+        }
+
+        return end.DayNumber - start.DayNumber + 1;
+    }
+
     public static (int Days, int Hours, int Minutes) SplitLeaveMinutes(int minutes)
     {
         int total = Math.Max(minutes, 0);

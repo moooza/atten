@@ -16,6 +16,7 @@
     <x:Double x:Key="FieldGap">8</x:Double>
     <x:Double x:Key="PageGap">12</x:Double>
     <x:Double x:Key="CompactFieldWidth">72</x:Double>
+    <x:Double x:Key="AmountFieldWidth">104</x:Double>
     <x:Double x:Key="FormMaxWidth">420</x:Double>
     <x:Double x:Key="ShellToolbarHeight">72</x:Double>
     <x:Double x:Key="IconButtonSize">36</x:Double>
@@ -179,7 +180,7 @@
         <Setter Property="FontSize" Value="{StaticResource BodyFontSize}" />
         <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
         <Setter Property="FlowDirection" Value="RightToLeft" />
-        <Setter Property="HorizontalContentAlignment" Value="Right" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
     </Style>
 
     <Style x:Key="AppCheckBox" TargetType="CheckBox">
@@ -288,6 +289,16 @@
         <Setter Property="FontSize" Value="{StaticResource CaptionFontSize}" />
         <Setter Property="TextAlignment" Value="Right" />
         <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="AppAccentText" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{ThemeResource Accent}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource CaptionFontSize}" />
+        <Setter Property="TextAlignment" Value="Right" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 

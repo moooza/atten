@@ -3,6 +3,7 @@ using Atten.Data;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Windows.Graphics;
 
 namespace Atten.App.Leaves;
 
@@ -12,6 +13,8 @@ public sealed partial class LeavesPage : Page
     private readonly IPersonnelRepository? _people;
     private readonly HashSet<int> _checkedYears = [Leave.ShamsiYearOf(DateOnly.FromDateTime(DateTime.Today))];
     private long? _yearsPersonId;
+    private FormWindow? _editorWindow;
+    private LeaveForm? _editor;
 
     public LeavesPage()
     {
@@ -27,13 +30,8 @@ public sealed partial class LeavesPage : Page
             ShowEmpty(PersonPicker.Error ?? AppMessages.PersonnelLoadFailed);
         };
         YearDropdown.SelectionChanged += OnYearsChanged;
-        Editor.Saved += (_, _) =>
-        {
-            HideForm();
-            Reload(keepYears: true);
-        };
-        Editor.Cancelled += (_, _) => HideForm();
         Loaded += (_, _) => Reload(keepYears: false);
+        Unloaded += (_, _) => _editorWindow?.Close();
     }
 
     private void OnAdd(object sender, RoutedEventArgs args)
@@ -88,8 +86,45 @@ public sealed partial class LeavesPage : Page
             return;
         }
 
-        Editor.Bind(_store, _people, personnelId, leave);
-        ShowForm();
+        string title = leave is null ? AppMessages.LeaveAdd : AppMessages.LeaveEdit;
+        if (_editorWindow is null || _editor is null)
+        {
+            _editor = new LeaveForm();
+            _editor.Saved += OnEditorSaved;
+            _editor.Cancelled += OnEditorCancelled;
+            _editorWindow = new FormWindow(title, _editor, new SizeInt32(580, 640));
+            _editorWindow.Closed += OnEditorClosed;
+        }
+        else
+        {
+            _editorWindow.Title = title;
+        }
+
+        _editor.Bind(_store, _people, personnelId, leave);
+        _editorWindow.BringForward();
+    }
+
+    private void OnEditorSaved(object? sender, EventArgs args)
+    {
+        _editorWindow?.Close();
+        Reload(keepYears: true);
+    }
+
+    private void OnEditorCancelled(object? sender, EventArgs args)
+    {
+        _editorWindow?.Close();
+    }
+
+    private void OnEditorClosed(object sender, WindowEventArgs args)
+    {
+        if (_editor is not null)
+        {
+            _editor.Saved -= OnEditorSaved;
+            _editor.Cancelled -= OnEditorCancelled;
+        }
+
+        _editorWindow = null;
+        _editor = null;
     }
 
     private void Reload(bool keepYears)
@@ -209,17 +244,5 @@ public sealed partial class LeavesPage : Page
         EmptyText.Visibility = Visibility.Visible;
         TablePanel.Visibility = Visibility.Collapsed;
         LeavesList.ItemsSource = null;
-    }
-
-    private void ShowForm()
-    {
-        ListRoot.Visibility = Visibility.Collapsed;
-        FormHost.Visibility = Visibility.Visible;
-    }
-
-    private void HideForm()
-    {
-        FormHost.Visibility = Visibility.Collapsed;
-        ListRoot.Visibility = Visibility.Visible;
     }
 }

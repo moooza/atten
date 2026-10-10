@@ -55,7 +55,14 @@ public sealed class AppYearDropdown : UserControl
             UpdateCaption();
             Tint();
         };
-        ActualThemeChanged += (_, _) => Tint();
+        ActualThemeChanged += (_, _) =>
+        {
+            Tint();
+            foreach (CheckBox box in _checks.Values)
+            {
+                PaintCheck(box);
+            }
+        };
         _popup.Opening += (_, _) => Rebuild();
     }
 
@@ -110,6 +117,7 @@ public sealed class AppYearDropdown : UserControl
                 HorizontalAlignment = HorizontalAlignment.Stretch,
             };
             ThemeLooks.Apply(box, "AppCheckBox");
+            PaintCheck(box);
             box.Checked += OnYearToggled;
             box.Unchecked += OnYearToggled;
             _checks[year] = box;
@@ -142,6 +150,21 @@ public sealed class AppYearDropdown : UserControl
     private void UpdateCaption()
     {
         _caption.Text = FormatCaption(_selected);
+    }
+
+    private void PaintCheck(CheckBox box)
+    {
+        Brush fill = Theme.Brush(box, Tokens.Accent);
+        Brush glyph = Theme.Brush(box, Tokens.OnAccent);
+        box.Resources["CheckBoxCheckBackgroundFillChecked"] = fill;
+        box.Resources["CheckBoxCheckBackgroundFillCheckedPointerOver"] = fill;
+        box.Resources["CheckBoxCheckBackgroundFillCheckedPressed"] = fill;
+        box.Resources["CheckBoxCheckBackgroundStrokeChecked"] = fill;
+        box.Resources["CheckBoxCheckBackgroundStrokeCheckedPointerOver"] = fill;
+        box.Resources["CheckBoxCheckBackgroundStrokeCheckedPressed"] = fill;
+        box.Resources["CheckBoxCheckGlyphForegroundChecked"] = glyph;
+        box.Resources["CheckBoxCheckGlyphForegroundCheckedPointerOver"] = glyph;
+        box.Resources["CheckBoxCheckGlyphForegroundCheckedPressed"] = glyph;
     }
 
     private void Tint()

@@ -1,9 +1,11 @@
 using Atten.Core;
 using Atten.Data;
+using Atten.App.Leaves;
 using Atten.UI.Theme;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Windows.Graphics;
 
 namespace Atten.App.Calculation;
 
@@ -20,6 +22,8 @@ public sealed partial class CalculationPage : Page
     private DateOnly? _start;
     private DateOnly? _end;
     private readonly List<SheetDayRowView> _views = [];
+    private FormWindow? _editorWindow;
+    private LeaveForm? _editor;
 
     public CalculationPage()
     {
@@ -38,12 +42,6 @@ public sealed partial class CalculationPage : Page
         };
         StartField.DateChanged += (_, _) => ShowIfReady();
         EndField.DateChanged += (_, _) => ShowIfReady();
-        Editor.Saved += (_, _) =>
-        {
-            HideForm();
-            ShowResult();
-        };
-        Editor.Cancelled += (_, _) => HideForm();
         Loaded += (_, _) =>
         {
             PersonPicker.Reload();
@@ -52,6 +50,7 @@ public sealed partial class CalculationPage : Page
                 Notice.Text = PersonPicker.Error;
             }
         };
+        Unloaded += (_, _) => _editorWindow?.Close();
     }
 
     private void OnShow(object sender, RoutedEventArgs args)
@@ -61,11 +60,6 @@ public sealed partial class CalculationPage : Page
 
     private void OnEnterAccelerator(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
     {
-        if (FormHost.Visibility == Visibility.Visible)
-        {
-            return;
-        }
-
         ShowResult();
         args.Handled = true;
     }
@@ -181,11 +175,6 @@ public sealed partial class CalculationPage : Page
             return;
         }
 
-        if (FormHost.Visibility == Visibility.Visible)
-        {
-            return;
-        }
-
         if (!TryContext(storedDate, out SheetRow row) || row.BalanceMinutes >= 0 || _personnelId is null)
         {
             return;
@@ -197,7 +186,20 @@ public sealed partial class CalculationPage : Page
             return;
         }
 
-        Editor.Bind(
+        if (_editorWindow is null || _editor is null)
+        {
+            _editor = new LeaveForm();
+            _editor.Saved += OnEditorSaved;
+            _editor.Cancelled += OnEditorCancelled;
+            _editorWindow = new FormWindow(AppMessages.LeaveAdd, _editor, new SizeInt32(580, 640));
+            _editorWindow.Closed += OnEditorClosed;
+        }
+        else
+        {
+            _editorWindow.Title = AppMessages.LeaveAdd;
+        }
+
+        _editor.Bind(
             _leaves,
             _people,
             _personnelId,
@@ -205,8 +207,30 @@ public sealed partial class CalculationPage : Page
             startDate: Day(storedDate),
             endDate: Day(storedDate),
             minutes: Math.Abs(row.BalanceMinutes));
-        SheetRoot.Visibility = Visibility.Collapsed;
-        FormHost.Visibility = Visibility.Visible;
+        _editorWindow.BringForward();
+    }
+
+    private void OnEditorSaved(object? sender, EventArgs args)
+    {
+        _editorWindow?.Close();
+        ShowResult();
+    }
+
+    private void OnEditorCancelled(object? sender, EventArgs args)
+    {
+        _editorWindow?.Close();
+    }
+
+    private void OnEditorClosed(object sender, WindowEventArgs args)
+    {
+        if (_editor is not null)
+        {
+            _editor.Saved -= OnEditorSaved;
+            _editor.Cancelled -= OnEditorCancelled;
+        }
+
+        _editorWindow = null;
+        _editor = null;
     }
 
     private void SaveSlot(string storedDate, int slot, string text)
@@ -351,12 +375,6 @@ public sealed partial class CalculationPage : Page
         EmptyText.Text = message;
         EmptyText.Visibility = Visibility.Visible;
         TablePanel.Visibility = Visibility.Collapsed;
-    }
-
-    private void HideForm()
-    {
-        FormHost.Visibility = Visibility.Collapsed;
-        SheetRoot.Visibility = Visibility.Visible;
     }
 
     private bool CommitPending()

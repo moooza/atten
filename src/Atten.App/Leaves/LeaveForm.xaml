@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:shared="using:Atten.App.Shared"
     xmlns:theme="using:Atten.UI.Theme"
-    FlowDirection="RightToLeft">
+    FlowDirection="LeftToRight">
     <UserControl.KeyboardAccelerators>
         <KeyboardAccelerator Key="Enter" Invoked="OnEnterAccelerator" />
         <KeyboardAccelerator Key="Escape" Invoked="OnEscapeAccelerator" />
@@ -12,30 +12,60 @@
     <Border
         Style="{StaticResource AppPanel}"
         Padding="{StaticResource FormPadding}"
-        MaxWidth="{StaticResource FormWideMaxWidth}"
-        HorizontalAlignment="Center">
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch">
         <StackPanel>
-            <TextBlock x:Name="Heading" Style="{StaticResource AppTitleText}" />
+            <TextBlock
+                x:Name="Heading"
+                Style="{StaticResource AppTitleText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
             <TextBlock
                 x:Name="Hint"
                 Style="{StaticResource AppCaptionText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right"
                 TextWrapping="Wrap"
                 Margin="{StaticResource FieldHintMargin}" />
 
-            <TextBlock Text="پرسنل" Style="{StaticResource AppFieldLabel}" />
+            <TextBlock
+                Text="پرسنل"
+                Style="{StaticResource AppFieldLabel}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
             <shared:PersonnelPicker x:Name="PersonPicker" HorizontalAlignment="Stretch" />
+            <TextBlock
+                x:Name="RemainingText"
+                Style="{StaticResource AppAccentText}"
+                Margin="{StaticResource FieldHintMargin}" />
 
-            <TextBlock Text="تاریخ شروع" Style="{StaticResource AppFieldLabel}" />
+            <TextBlock
+                Text="تاریخ شروع"
+                Style="{StaticResource AppFieldLabel}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
             <theme:ShamsiDateField x:Name="StartField" HorizontalAlignment="Stretch" />
 
-            <TextBlock Text="تاریخ پایان" Style="{StaticResource AppFieldLabel}" />
+            <TextBlock
+                Text="تاریخ پایان"
+                Style="{StaticResource AppFieldLabel}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
             <theme:ShamsiDateField x:Name="EndField" HorizontalAlignment="Stretch" />
 
-            <TextBlock Text="میزان مرخصی" Style="{StaticResource AppFieldLabel}" />
-            <StackPanel Orientation="Horizontal" Spacing="{StaticResource FieldGap}">
+            <TextBlock
+                Text="میزان مرخصی"
+                Style="{StaticResource AppFieldLabel}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                FlowDirection="RightToLeft"
+                Spacing="{StaticResource FieldGap}">
                 <theme:AppTextBox
                     x:Name="DaysBox"
-                    Width="{StaticResource CompactFieldWidth}"
+                    Width="{StaticResource AmountFieldWidth}"
                     TextAlignment="Center"
                     BeforeTextChanging="OnWholeNumberChanging" />
                 <TextBlock
@@ -44,7 +74,7 @@
                     VerticalAlignment="Center" />
                 <theme:AppTextBox
                     x:Name="HoursBox"
-                    Width="{StaticResource CompactFieldWidth}"
+                    Width="{StaticResource AmountFieldWidth}"
                     TextAlignment="Center"
                     BeforeTextChanging="OnWholeNumberChanging" />
                 <TextBlock
@@ -53,7 +83,7 @@
                     VerticalAlignment="Center" />
                 <theme:AppTextBox
                     x:Name="MinutesBox"
-                    Width="{StaticResource CompactFieldWidth}"
+                    Width="{StaticResource AmountFieldWidth}"
                     TextAlignment="Center"
                     BeforeTextChanging="OnMinutesChanging" />
                 <TextBlock
@@ -65,15 +95,20 @@
             <TextBlock
                 x:Name="Preview"
                 Style="{StaticResource AppInkText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right"
                 Margin="0,8,0,0" />
             <TextBlock
                 x:Name="ErrorText"
                 Style="{StaticResource AppDangerText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right"
                 Margin="0,4,0,0" />
 
             <StackPanel
                 Orientation="Horizontal"
                 HorizontalAlignment="Right"
+                FlowDirection="RightToLeft"
                 Spacing="{StaticResource FieldGap}"
                 Margin="{StaticResource FormActionsMargin}">
                 <theme:AppButton

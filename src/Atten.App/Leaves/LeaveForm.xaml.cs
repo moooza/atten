@@ -19,6 +19,9 @@ public sealed partial class LeaveForm : UserControl
     {
         InitializeComponent();
         Hint.Text = AppMessages.LeaveHint;
+        PersonPicker.SelectionChanged += (_, _) => UpdateRemaining();
+        StartField.DateChanged += (_, _) => OnDatesChanged();
+        EndField.DateChanged += (_, _) => OnDatesChanged();
         DaysBox.TextChanged += (_, _) => UpdatePreview();
         HoursBox.TextChanged += (_, _) => UpdatePreview();
         MinutesBox.TextChanged += (_, _) => UpdatePreview();
@@ -65,6 +68,7 @@ public sealed partial class LeaveForm : UserControl
             MinutesBox.Text = string.Empty;
         }
 
+        UpdateRemaining();
         UpdatePreview();
         PersonPicker.Focus(FocusState.Programmatic);
     }
@@ -155,6 +159,60 @@ public sealed partial class LeaveForm : UserControl
         catch (Exception ex) when (ex is ArgumentException or FormatException)
         {
             ErrorText.Text = ex.Message;
+        }
+    }
+
+    private void OnDatesChanged()
+    {
+        FillDaysFromDates();
+        UpdateRemaining();
+    }
+
+    private void FillDaysFromDates()
+    {
+        HoursBox.Text = string.Empty;
+        MinutesBox.Text = string.Empty;
+        if (StartField.GregorianDate is not DateOnly start || EndField.GregorianDate is not DateOnly end)
+        {
+            return;
+        }
+
+        DaysBox.Text = Leave.CalendarDaySpan(start, end)?.ToString(Invariant) ?? string.Empty;
+    }
+
+    private void UpdateRemaining()
+    {
+        RemainingText.Text = string.Empty;
+        if (_store is null || PersonPicker.SelectedPerson is not PersonnelRecord person)
+        {
+            return;
+        }
+
+        try
+        {
+            DateOnly? started = Leave.OptionalDate(person.CooperationStart);
+            DateOnly? ended = Leave.OptionalDate(person.CooperationEnd);
+            DateOnly yearDay = StartField.GregorianDate ?? DateOnly.FromDateTime(DateTime.Today);
+            int year = Leave.ShamsiYearOf(yearDay);
+            var used = new Dictionary<int, int>();
+            foreach (LeaveRecord row in _store.List(person.Id))
+            {
+                if (_leaveId is long id && row.Id == id)
+                {
+                    continue;
+                }
+
+                int rowYear = Leave.ShamsiYearOf(row.StartDate);
+                used[rowYear] = used.GetValueOrDefault(rowYear) + row.Minutes;
+            }
+
+            RemainingText.Text = AppMessages.LeaveBalanceNow(
+                year,
+                Leave.RemainingLeaveMinutes(year, started, ended, used));
+        }
+        catch (Exception)
+        {
+            RemainingText.Text = string.Empty;
         }
     }
 

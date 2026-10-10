@@ -295,4 +295,14 @@ public class LeaveTests
         Assert.Equal(Leave.YearlyLeaveMinutes, current.Earned);
         Assert.Equal(Leave.CarryLeaveMinutes, current.Transfer);
     }
+
+    [Fact]
+    public void CalendarDaySpanIsEmptyWhenDatesMatchOrReverse()
+    {
+        DateOnly start = Dates.ParseShamsiDate("1405/01/01");
+        DateOnly next = Dates.ParseShamsiDate("1405/01/03");
+        Assert.Null(Leave.CalendarDaySpan(start, start));
+        Assert.Null(Leave.CalendarDaySpan(next, start));
+        Assert.Equal(3, Leave.CalendarDaySpan(start, next));
+    }
 }

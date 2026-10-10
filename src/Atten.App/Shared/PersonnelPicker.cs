@@ -2,6 +2,7 @@ using Atten.Data;
 using Atten.UI.Theme;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 
 namespace Atten.App.Shared;
 
@@ -43,11 +44,13 @@ public sealed class PersonnelPicker : UserControl
         _combo = new AppComboBox
         {
             HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Left,
             PlaceholderText = AppMessages.ChoosePersonnel,
             DisplayMemberPath = nameof(Choice.Label),
             SelectedValuePath = nameof(Choice.Id),
         };
         _combo.SelectionChanged += OnComboSelectionChanged;
+        _combo.Loaded += (_, _) => AlignPlaceholder();
         Content = _combo;
 
         Loaded += OnLoaded;
@@ -146,6 +149,39 @@ public sealed class PersonnelPicker : UserControl
     private static IPersonnelRepository? TryStore()
     {
         return Application.Current is App app ? app.Store?.Personnel : null;
+    }
+
+    private void AlignPlaceholder()
+    {
+        if (FindNamed<TextBlock>(_combo, "PlaceholderTextBlock") is not TextBlock placeholder)
+        {
+            return;
+        }
+
+        placeholder.FlowDirection = FlowDirection.RightToLeft;
+        placeholder.TextAlignment = TextAlignment.Right;
+        placeholder.HorizontalAlignment = HorizontalAlignment.Stretch;
+    }
+
+    private static T? FindNamed<T>(DependencyObject root, string name)
+        where T : FrameworkElement
+    {
+        int count = VisualTreeHelper.GetChildrenCount(root);
+        for (int i = 0; i < count; i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(root, i);
+            if (child is T match && match.Name == name)
+            {
+                return match;
+            }
+
+            if (FindNamed<T>(child, name) is T nested)
+            {
+                return nested;
+            }
+        }
+
+        return null;
     }
 
     private static long? AsId(object? value)

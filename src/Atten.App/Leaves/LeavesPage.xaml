@@ -17,16 +17,22 @@
             </Grid.RowDefinitions>
 
             <Grid Margin="{StaticResource HeaderBottomMargin}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <StackPanel
+                    Grid.Column="0"
                     Orientation="Horizontal"
-                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
                     Spacing="{StaticResource PageGap}">
                     <TextBlock Text="مرخصی‌ها" Style="{StaticResource AppTitleText}" />
                     <TextBlock x:Name="CountText" Style="{StaticResource AppCaptionText}" />
                 </StackPanel>
                 <StackPanel
+                    Grid.Column="1"
                     Orientation="Horizontal"
-                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
                     Spacing="{StaticResource FieldGap}">
                     <TextBlock x:Name="Notice" Style="{StaticResource AppDangerText}" />
                     <theme:AppButton
@@ -43,7 +49,7 @@
             <StackPanel
                 Grid.Row="1"
                 Orientation="Horizontal"
-                HorizontalAlignment="Right"
+                HorizontalAlignment="Left"
                 Spacing="{StaticResource PageGap}"
                 Margin="{StaticResource HeaderBottomMargin}">
                 <TextBlock
@@ -178,16 +184,5 @@
                 </theme:AppListView>
             </Border>
         </Grid>
-
-        <ScrollViewer
-            x:Name="FormHost"
-            Visibility="Collapsed"
-            VerticalScrollBarVisibility="Auto">
-            <local:LeaveForm
-                x:Name="Editor"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Top"
-                Margin="{StaticResource FormHostMargin}" />
-        </ScrollViewer>
     </Grid>
 </Page>

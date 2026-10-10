@@ -2,7 +2,6 @@
     x:Class="Atten.App.Calculation.CalculationPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:leaves="using:Atten.App.Leaves"
     xmlns:shared="using:Atten.App.Shared"
     xmlns:theme="using:Atten.UI.Theme"
     Background="{ThemeResource Surface}"
@@ -83,16 +82,5 @@
                 </ScrollViewer>
             </Border>
         </Grid>
-
-        <ScrollViewer
-            x:Name="FormHost"
-            Visibility="Collapsed"
-            VerticalScrollBarVisibility="Auto">
-            <leaves:LeaveForm
-                x:Name="Editor"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Top"
-                Margin="{StaticResource FormHostMargin}" />
-        </ScrollViewer>
     </Grid>
 </Page>

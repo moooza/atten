@@ -42,4 +42,13 @@
     <SolidColorBrush x:Key="MenuFlyoutItemForeground" Color="{StaticResource InkColor}" />
     <SolidColorBrush x:Key="MenuFlyoutItemForegroundPointerOver" Color="{StaticResource InkColor}" />
     <SolidColorBrush x:Key="MenuFlyoutItemForegroundPressed" Color="{StaticResource InkColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillChecked" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPointerOver" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillCheckedPressed" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeChecked" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPointerOver" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeCheckedPressed" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundChecked" Color="{StaticResource OnAccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPointerOver" Color="{StaticResource OnAccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPressed" Color="{StaticResource OnAccentColor}" />
 </ResourceDictionary>
