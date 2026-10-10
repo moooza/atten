@@ -35,7 +35,7 @@ def test_dashboard_button_is_before_personnel_and_opens_an_empty_page(tmp_path):
         root.update()
 
         assert root.title() == f"attendance نسخه {__version__}"
-        assert __version__ == "1.2"
+        assert __version__ == "1.3"
         assert window.nav_items["dashboard"].caption.cget("text") == "داشبورد"
         buttons = window.toolbar.pack_slaves()
         assert buttons.index(window.nav_items["dashboard"]) < buttons.index(window.nav_items["personnel"])
