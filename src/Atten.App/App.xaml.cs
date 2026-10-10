@@ -11,8 +11,8 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
-        AppTheme theme = Theme.Load();
-        RequestedTheme = theme == AppTheme.Dark ? ApplicationTheme.Dark : ApplicationTheme.Light;
+        Theme.Load();
+        RequestedTheme = Theme.Current == AppTheme.Dark ? ApplicationTheme.Dark : ApplicationTheme.Light;
     }
 
     public static new App Current => (App)Application.Current;

@@ -1,3 +1,4 @@
+using Atten.App.Settings;
 using Atten.UI.Theme;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -15,14 +16,17 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
         Title = AppInfo.WindowTitle;
+        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico"));
         SizeWindow();
         if (Content is FrameworkElement root)
         {
             Theme.ApplySaved(root);
         }
 
+        Theme.Changed += (_, _) => WindowChrome.Apply(this);
+        WindowChrome.Apply(this);
         BuildNavigation();
-        BindThemePicker();
+        BindSettings();
         SetNotice(notice);
         Show(ShellDestinations.Dashboard.Key);
     }
@@ -83,22 +87,12 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void BindThemePicker()
+    private void BindSettings()
     {
-        ThemePicker.Items.Add("روشن");
-        ThemePicker.Items.Add("تیره");
-        ThemePicker.SelectedIndex = Theme.Current == AppTheme.Dark ? 1 : 0;
-        ThemePicker.SelectionChanged += OnThemePicked;
-    }
-
-    private void OnThemePicked(object sender, SelectionChangedEventArgs args)
-    {
-        if (Content is not FrameworkElement root)
+        SettingsButton.Flyout = new AppPopup
         {
-            return;
-        }
-
-        AppTheme theme = ThemePicker.SelectedIndex == 1 ? AppTheme.Dark : AppTheme.Light;
-        Theme.Apply(root, theme);
+            Content = new SettingsForm(),
+            Placement = Microsoft.UI.Xaml.Controls.Primitives.FlyoutPlacementMode.Bottom,
+        };
     }
 }
