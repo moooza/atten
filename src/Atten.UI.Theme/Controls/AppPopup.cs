@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 
 namespace Atten.UI.Theme;
 
@@ -16,6 +17,7 @@ public sealed class AppPopup : Flyout
         ShouldConstrainToRootBounds = false;
         LightDismissOverlayMode = LightDismissOverlayMode.Off;
         Opening += OnOpening;
+        Opened += OnOpened;
     }
 
     private void OnOpening(object? sender, object args)
@@ -24,6 +26,27 @@ public sealed class AppPopup : Flyout
             && value is Style style)
         {
             FlyoutPresenterStyle = style;
+        }
+    }
+
+    private void OnOpened(object? sender, object args)
+    {
+        if (Content is not FrameworkElement content)
+        {
+            return;
+        }
+
+        DependencyObject? current = content;
+        while (current is not null)
+        {
+            if (current is FlyoutPresenter presenter)
+            {
+                presenter.FlowDirection = FlowDirection.RightToLeft;
+                presenter.HorizontalContentAlignment = HorizontalAlignment.Stretch;
+                break;
+            }
+
+            current = VisualTreeHelper.GetParent(current);
         }
     }
 }

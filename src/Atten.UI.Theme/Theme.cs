@@ -2,6 +2,8 @@ using System.Runtime.InteropServices;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Windows.Storage;
+using Windows.UI;
+using Windows.UI.ViewManagement;
 
 namespace Atten.UI.Theme;
 
@@ -13,11 +15,18 @@ public static class Theme
 {
     public const string SettingKey = "theme";
 
+    private static UISettings? _uiSettings;
+    private static WeakReference<FrameworkElement>? _appliedRoot;
+
     public static ResourceDictionary Light { get; } = new Light();
 
     public static ResourceDictionary Dark { get; } = new Dark();
 
+    public static AppTheme Preference { get; private set; } = AppTheme.Light;
+
     public static AppTheme Current { get; private set; } = AppTheme.Light;
+
+    public static event EventHandler? Changed;
 
     public static void Install(Application app)
     {
@@ -35,13 +44,13 @@ public static class Theme
 
     public static AppTheme Load()
     {
-        AppTheme theme = AppTheme.Light;
+        AppTheme preference = AppTheme.Light;
         try
         {
             object? stored = ApplicationData.Current.LocalSettings.Values[SettingKey];
             if (stored is string name && Enum.TryParse(name, ignoreCase: true, out AppTheme parsed))
             {
-                theme = parsed;
+                preference = parsed;
             }
         }
         catch (InvalidOperationException)
@@ -54,8 +63,19 @@ public static class Theme
         {
         }
 
-        Current = theme;
-        return theme;
+        Preference = preference;
+        Current = Resolve(preference);
+        return preference;
+    }
+
+    public static AppTheme Resolve(AppTheme preference)
+    {
+        if (preference == AppTheme.System)
+        {
+            return IsSystemDark() ? AppTheme.Dark : AppTheme.Light;
+        }
+
+        return preference == AppTheme.Dark ? AppTheme.Dark : AppTheme.Light;
     }
 
     public static void ApplySaved(FrameworkElement root)
@@ -63,14 +83,16 @@ public static class Theme
         Apply(root, Load());
     }
 
-    public static void Apply(FrameworkElement root, AppTheme theme)
+    public static void Apply(FrameworkElement root, AppTheme preference)
     {
         ArgumentNullException.ThrowIfNull(root);
-        Current = theme;
-        root.RequestedTheme = theme == AppTheme.Dark ? ElementTheme.Dark : ElementTheme.Light;
+        Preference = preference;
+        Current = Resolve(preference);
+        root.RequestedTheme = Current == AppTheme.Dark ? ElementTheme.Dark : ElementTheme.Light;
+        WatchSystem(root);
         try
         {
-            ApplicationData.Current.LocalSettings.Values[SettingKey] = theme.ToString();
+            ApplicationData.Current.LocalSettings.Values[SettingKey] = preference.ToString();
         }
         catch (InvalidOperationException)
         {
@@ -81,6 +103,25 @@ public static class Theme
         catch (COMException)
         {
         }
+
+        Changed?.Invoke(null, EventArgs.Empty);
+    }
+
+    public static Color TokenColor(string colorKey)
+    {
+        return TokenColor(Current == AppTheme.Dark ? ElementTheme.Dark : ElementTheme.Light, colorKey);
+    }
+
+    public static Color TokenColor(ElementTheme theme, string colorKey)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(colorKey);
+        ResourceDictionary dictionary = DictionaryFor(theme);
+        if (dictionary.TryGetValue(colorKey, out object? value) && value is Color color)
+        {
+            return color;
+        }
+
+        throw new KeyNotFoundException(colorKey);
     }
 
     public static Brush Brush(FrameworkElement scope, string token)
@@ -106,5 +147,51 @@ public static class Theme
         }
 
         return theme == ElementTheme.Dark ? Dark : Light;
+    }
+
+    public static bool IsSystemDark()
+    {
+        try
+        {
+            Color background = new UISettings().GetColorValue(UIColorType.Background);
+            return background.R + background.G + background.B < 384;
+        }
+        catch (COMException)
+        {
+            return Application.Current?.RequestedTheme == ApplicationTheme.Dark;
+        }
+    }
+
+    private static void WatchSystem(FrameworkElement root)
+    {
+        _appliedRoot = new WeakReference<FrameworkElement>(root);
+        if (_uiSettings is not null)
+        {
+            return;
+        }
+
+        _uiSettings = new UISettings();
+        _uiSettings.ColorValuesChanged += OnSystemColorsChanged;
+    }
+
+    private static void OnSystemColorsChanged(UISettings sender, object args)
+    {
+        if (Preference != AppTheme.System)
+        {
+            return;
+        }
+
+        if (_appliedRoot is null || !_appliedRoot.TryGetTarget(out FrameworkElement? root))
+        {
+            return;
+        }
+
+        root.DispatcherQueue.TryEnqueue(() =>
+        {
+            if (Preference == AppTheme.System)
+            {
+                Apply(root, AppTheme.System);
+            }
+        });
     }
 }

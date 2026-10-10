@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Theme
 
-Screens do not set raw colors, fonts, or paddings. Use named tokens: `Surface`, `Ink`, `Muted`, `Line`, `Accent`, `Danger`, `Success`.
+Screens do not set raw colors, fonts, or paddings. Use named tokens: `Surface`, `Ink`, `Muted`, `Line`, `Accent`, `Highlight`, `HighlightStrong`, `Danger`, `Success`.
 
 Light and dark are two dictionaries (`Theme.Light` / `Theme.Dark`) with the same token names (WinUI 3 `ResourceDictionary`). The user's theme choice is local settings, not domain logic.
 

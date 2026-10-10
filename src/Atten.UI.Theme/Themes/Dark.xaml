@@ -7,17 +7,39 @@
     <Color x:Key="InkColor">#E8EEF4</Color>
     <Color x:Key="MutedColor">#94A3B8</Color>
     <Color x:Key="LineColor">#3D4B5C</Color>
-    <Color x:Key="AccentColor">#5B9FD4</Color>
+    <Color x:Key="AccentColor">#C982ED</Color>
+    <Color x:Key="HighlightColor">#413856</Color>
+    <Color x:Key="HighlightStrongColor">#4F4066</Color>
     <Color x:Key="DangerColor">#F87171</Color>
     <Color x:Key="SuccessColor">#4ADE80</Color>
-    <Color x:Key="OnAccentColor">#0B1220</Color>
+    <Color x:Key="OnAccentColor">#1A1024</Color>
 
     <SolidColorBrush x:Key="Surface" Color="{StaticResource SurfaceColor}" />
     <SolidColorBrush x:Key="Ink" Color="{StaticResource InkColor}" />
     <SolidColorBrush x:Key="Muted" Color="{StaticResource MutedColor}" />
     <SolidColorBrush x:Key="Line" Color="{StaticResource LineColor}" />
     <SolidColorBrush x:Key="Accent" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="Highlight" Color="{StaticResource HighlightColor}" />
+    <SolidColorBrush x:Key="HighlightStrong" Color="{StaticResource HighlightStrongColor}" />
     <SolidColorBrush x:Key="Danger" Color="{StaticResource DangerColor}" />
     <SolidColorBrush x:Key="Success" Color="{StaticResource SuccessColor}" />
     <SolidColorBrush x:Key="OnAccent" Color="{StaticResource OnAccentColor}" />
+
+    <SolidColorBrush x:Key="ListViewItemBackground" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="{StaticResource LineColor}" />
+    <SolidColorBrush x:Key="ListViewItemBackgroundPressed" Color="{StaticResource LineColor}" />
+    <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="{StaticResource HighlightColor}" />
+    <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="{StaticResource HighlightStrongColor}" />
+    <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="{StaticResource HighlightColor}" />
+    <SolidColorBrush x:Key="ListViewItemForeground" Color="{StaticResource InkColor}" />
+    <SolidColorBrush x:Key="ListViewItemForegroundSelected" Color="{StaticResource InkColor}" />
+    <SolidColorBrush x:Key="ListViewItemSelectionIndicatorBrush" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="MenuFlyoutPresenterBackground" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush" Color="{StaticResource LineColor}" />
+    <SolidColorBrush x:Key="MenuFlyoutItemBackground" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="MenuFlyoutItemBackgroundPointerOver" Color="{StaticResource HighlightColor}" />
+    <SolidColorBrush x:Key="MenuFlyoutItemBackgroundPressed" Color="{StaticResource HighlightStrongColor}" />
+    <SolidColorBrush x:Key="MenuFlyoutItemForeground" Color="{StaticResource InkColor}" />
+    <SolidColorBrush x:Key="MenuFlyoutItemForegroundPointerOver" Color="{StaticResource InkColor}" />
+    <SolidColorBrush x:Key="MenuFlyoutItemForegroundPressed" Color="{StaticResource InkColor}" />
 </ResourceDictionary>

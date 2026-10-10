@@ -2,6 +2,7 @@ using System.Globalization;
 using Atten.Core;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 
 namespace Atten.UI.Theme;
 
@@ -25,7 +26,7 @@ public sealed class ShamsiCalendar : UserControl
 
         _monthLabel = new TextBlock
         {
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            FontWeight = Microsoft.UI.Text.FontWeights.Normal,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center,
         };
@@ -110,6 +111,7 @@ public sealed class ShamsiCalendar : UserControl
         _days.RowDefinitions.Clear();
         _monthLabel.Text = $"{Dates.ShamsiMonthNames[_month - 1]} {_year}";
         _monthLabel.Foreground = Theme.Brush(this, Tokens.Ink);
+        ApplyFont(_monthLabel, "AppFontFamilyBold");
 
         _days.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         for (int weekday = 0; weekday < 7; weekday++)
@@ -121,6 +123,7 @@ public sealed class ShamsiCalendar : UserControl
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(2),
             };
+            ApplyFont(label, "AppFontFamily");
             Grid.SetColumn(label, weekday);
             _days.Children.Add(label);
         }
@@ -150,10 +153,30 @@ public sealed class ShamsiCalendar : UserControl
                 CornerRadius = new CornerRadius(4),
                 Tag = day,
             };
+            ThemeLooks.Apply(cell, "AppChromeButton");
+            ApplyFont(cell, "AppFontFamily");
             cell.Click += OnDayClick;
             Grid.SetColumn(cell, (offset + index) % 7);
             Grid.SetRow(cell, 1 + (offset + index) / 7);
             _days.Children.Add(cell);
+        }
+    }
+
+    private static void ApplyFont(Control control, string key)
+    {
+        if (Application.Current?.Resources.TryGetValue(key, out object? value) == true &&
+            value is FontFamily font)
+        {
+            control.FontFamily = font;
+        }
+    }
+
+    private static void ApplyFont(TextBlock block, string key)
+    {
+        if (Application.Current?.Resources.TryGetValue(key, out object? value) == true &&
+            value is FontFamily font)
+        {
+            block.FontFamily = font;
         }
     }
 
