@@ -79,7 +79,13 @@ public interface IClockEventRepository
 
     ClockEventImport Import(IReadOnlyList<AttlogRow> rows);
 
-    IReadOnlyList<ClockEventRecord> List();
+    IReadOnlyList<ClockEventRecord> List(
+        DateOnly? startDate = null,
+        DateOnly? endDate = null,
+        int skip = 0,
+        int? take = null);
+
+    int Count(DateOnly? startDate = null, DateOnly? endDate = null);
 
     IReadOnlyList<DeviceDay> ListDaily(string remoteId, DateOnly startDate, DateOnly endDate);
 }

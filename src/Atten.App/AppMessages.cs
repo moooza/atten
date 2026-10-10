@@ -87,6 +87,8 @@ public static class AppMessages
 
     public const string ClockEmpty = "هنوز ورود و خروجی ثبت نشده است.";
 
+    public const string ClockEmptyMonth = "در این ماه ورود و خروجی ثبت نشده است.";
+
     public const string ClockFileReadFailed = "خواندن فایل ممکن نشد.";
 
     public const string ClockPickerTitle = "فایل ورود و خروج";

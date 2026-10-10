@@ -18,7 +18,6 @@ public sealed class ClockEventRow
         Date = Dates.FormatShamsiDate(record.Date);
         Time = record.Time;
         CreatedAt = Stamp(record.CreatedAt);
-        UpdatedAt = Stamp(record.UpdatedAt);
     }
 
     public ClockEventRecord Record { get; }
@@ -36,8 +35,6 @@ public sealed class ClockEventRow
     public string Time { get; }
 
     public string CreatedAt { get; }
-
-    public string UpdatedAt { get; }
 
     private static string Stamp(string? value)
     {

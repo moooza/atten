@@ -223,6 +223,29 @@ public class RepositoryTests : IDisposable
     }
 
     [Fact]
+    public void ClockEventsListFiltersAShamsiMonthAndPages()
+    {
+        using var db = new TempDatabase();
+        IAttenRepository store = db.OpenStore();
+        store.ClockEvents.Add("dev-1", "علی", new DateOnly(2026, 9, 22), "07:00:00");
+        store.ClockEvents.Add("dev-1", "علی", new DateOnly(2026, 9, 23), "08:00:00");
+        store.ClockEvents.Add("dev-1", "علی", new DateOnly(2026, 10, 7), "09:00:00");
+        store.ClockEvents.Add("dev-1", "علی", new DateOnly(2026, 10, 22), "10:00:00");
+        store.ClockEvents.Add("dev-1", "علی", new DateOnly(2026, 10, 23), "11:00:00");
+
+        var (start, end) = Dates.ShamsiMonthSpan(1405, 7);
+        Assert.Equal(5, store.ClockEvents.Count());
+        Assert.Equal(3, store.ClockEvents.Count(start, end));
+        Assert.Equal(
+            ["2026-09-23", "2026-10-07", "2026-10-22"],
+            store.ClockEvents.List(start, end).Select(row => row.Date));
+        Assert.Equal(
+            ["2026-10-07"],
+            store.ClockEvents.List(start, end, skip: 1, take: 1).Select(row => row.Date));
+        Assert.Equal(5, store.ClockEvents.List().Count);
+    }
+
+    [Fact]
     public void ImportStoresEveryRowWithoutAPersonnelRecordAndSkipsDuplicates()
     {
         using var db = new TempDatabase();

@@ -118,8 +118,23 @@ internal sealed class SqliteClockEventRepository : IClockEventRepository
             RepositoryGuard.ClockSaveError);
     }
 
-    public IReadOnlyList<ClockEventRecord> List()
+    public IReadOnlyList<ClockEventRecord> List(
+        DateOnly? startDate = null,
+        DateOnly? endDate = null,
+        int skip = 0,
+        int? take = null)
     {
+        if (skip < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(skip));
+        }
+
+        if (take is { } size && size <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(take));
+        }
+
+        var (start, end) = DateFilter(startDate, endDate);
         return _session.Read(connection =>
         {
             using SqliteCommand command = connection.CreateCommand();
@@ -128,8 +143,16 @@ internal sealed class SqliteClockEventRepository : IClockEventRepository
                 SELECT id, remote_id, name, date, time, created_at, updated_at,
                        created_by, updated_by
                 FROM clock_events
+                """ + FilterSql(start) + """
                 ORDER BY date, time, id
-                """;
+                """ + (take is null ? "" : " LIMIT $take OFFSET $skip");
+            BindFilter(command, start, end);
+            if (take is { } limit)
+            {
+                command.Parameters.AddWithValue("$take", limit);
+                command.Parameters.AddWithValue("$skip", skip);
+            }
+
             using SqliteDataReader reader = command.ExecuteReader();
             var rows = new List<ClockEventRecord>();
             while (reader.Read())
@@ -147,6 +170,18 @@ internal sealed class SqliteClockEventRepository : IClockEventRepository
             }
 
             return rows;
+        });
+    }
+
+    public int Count(DateOnly? startDate = null, DateOnly? endDate = null)
+    {
+        var (start, end) = DateFilter(startDate, endDate);
+        return _session.Read(connection =>
+        {
+            using SqliteCommand command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM clock_events" + FilterSql(start);
+            BindFilter(command, start, end);
+            return Convert.ToInt32(command.ExecuteScalar());
         });
     }
 
@@ -195,6 +230,37 @@ internal sealed class SqliteClockEventRepository : IClockEventRepository
 
             return days;
         });
+    }
+
+    private static (string? Start, string? End) DateFilter(DateOnly? startDate, DateOnly? endDate)
+    {
+        if (startDate is null && endDate is null)
+        {
+            return (null, null);
+        }
+
+        if (startDate is null || endDate is null)
+        {
+            throw new ArgumentException(RepositoryGuard.InvalidDate);
+        }
+
+        return RepositoryGuard.DateSpan(startDate.Value, endDate.Value);
+    }
+
+    private static string FilterSql(string? start)
+    {
+        return start is null ? " " : " WHERE date >= $start AND date <= $end ";
+    }
+
+    private static void BindFilter(SqliteCommand command, string? start, string? end)
+    {
+        if (start is null || end is null)
+        {
+            return;
+        }
+
+        command.Parameters.AddWithValue("$start", start);
+        command.Parameters.AddWithValue("$end", end);
     }
 
     private static (string RemoteId, string Name, string Date, string Time) PreparedClockEvent(AttlogRow row)
