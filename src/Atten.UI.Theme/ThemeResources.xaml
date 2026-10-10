@@ -331,6 +331,51 @@
         <Setter Property="HorizontalAlignment" Value="Stretch" />
     </Style>
 
+    <Style x:Key="AppListViewStyle" TargetType="ListView">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListView">
+                    <Grid
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <ContentPresenter
+                            x:Name="HeaderHost"
+                            Content="{TemplateBinding Header}"
+                            ContentTemplate="{TemplateBinding HeaderTemplate}"
+                            Background="{TemplateBinding Background}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch" />
+                        <ScrollViewer
+                            x:Name="ScrollViewer"
+                            Grid.Row="1"
+                            TabNavigation="{TemplateBinding TabNavigation}"
+                            HorizontalScrollMode="{TemplateBinding ScrollViewer.HorizontalScrollMode}"
+                            HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                            VerticalScrollMode="{TemplateBinding ScrollViewer.VerticalScrollMode}"
+                            VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                            IsHorizontalRailEnabled="{TemplateBinding ScrollViewer.IsHorizontalRailEnabled}"
+                            IsVerticalRailEnabled="{TemplateBinding ScrollViewer.IsVerticalRailEnabled}"
+                            ZoomMode="{TemplateBinding ScrollViewer.ZoomMode}"
+                            IsDeferredScrollingEnabled="{TemplateBinding ScrollViewer.IsDeferredScrollingEnabled}"
+                            BringIntoViewOnFocusChange="{TemplateBinding ScrollViewer.BringIntoViewOnFocusChange}"
+                            AutomationProperties.AccessibilityView="Raw">
+                            <ItemsPresenter
+                                Footer="{TemplateBinding Footer}"
+                                FooterTemplate="{TemplateBinding FooterTemplate}"
+                                Padding="{TemplateBinding Padding}" />
+                        </ScrollViewer>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="AppNavButtonSelected" TargetType="Button" BasedOn="{StaticResource AppChromeButton}">
         <Setter Property="Background" Value="{ThemeResource Accent}" />
         <Setter Property="Foreground" Value="{ThemeResource OnAccent}" />

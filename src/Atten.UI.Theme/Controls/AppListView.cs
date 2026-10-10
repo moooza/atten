@@ -6,14 +6,38 @@ using Microsoft.UI.Xaml.Media;
 namespace Atten.UI.Theme;
 
 /// <summary>
-/// ListView that reapplies theme tokens to realized rows.
-/// The default item presenter keeps the previous theme until a hover restyles that row.
+/// ListView that keeps the column header pinned and reapplies theme tokens to rows.
 /// </summary>
 public sealed class AppListView : ListView
 {
+    private FrameworkElement? _headerHost;
+    private ScrollViewer? _scrollViewer;
+
     public AppListView()
     {
+        ThemeLooks.Apply(this, "AppListViewStyle");
+        Loaded += (_, _) => SyncHeaderGutter();
         ActualThemeChanged += (_, _) => RefreshChrome();
+    }
+
+    protected override void OnApplyTemplate()
+    {
+        if (_scrollViewer is not null)
+        {
+            _scrollViewer.SizeChanged -= OnScrollSize;
+            _scrollViewer.ViewChanged -= OnScrollView;
+        }
+
+        base.OnApplyTemplate();
+        _headerHost = GetTemplateChild("HeaderHost") as FrameworkElement;
+        _scrollViewer = GetTemplateChild("ScrollViewer") as ScrollViewer;
+        if (_scrollViewer is not null)
+        {
+            _scrollViewer.SizeChanged += OnScrollSize;
+            _scrollViewer.ViewChanged += OnScrollView;
+        }
+
+        SyncHeaderGutter();
     }
 
     protected override void PrepareContainerForItemOverride(DependencyObject element, object item)
@@ -23,6 +47,50 @@ public sealed class AppListView : ListView
         {
             ApplyChrome(row);
         }
+    }
+
+    private void OnScrollSize(object sender, SizeChangedEventArgs args)
+    {
+        SyncHeaderGutter();
+    }
+
+    private void OnScrollView(object? sender, ScrollViewerViewChangedEventArgs args)
+    {
+        SyncHeaderGutter();
+    }
+
+    private void SyncHeaderGutter()
+    {
+        if (_headerHost is null || _scrollViewer is null)
+        {
+            return;
+        }
+
+        double gutter = _scrollViewer.ComputedVerticalScrollBarVisibility == Visibility.Visible
+            ? VerticalBarWidth(_scrollViewer)
+            : 0;
+        _headerHost.Margin = new Thickness(gutter, 0, 0, 0);
+    }
+
+    private static double VerticalBarWidth(DependencyObject root)
+    {
+        int count = VisualTreeHelper.GetChildrenCount(root);
+        for (int index = 0; index < count; index++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(root, index);
+            if (child is ScrollBar { Orientation: Orientation.Vertical } bar && bar.ActualWidth > 0)
+            {
+                return bar.ActualWidth;
+            }
+
+            double nested = VerticalBarWidth(child);
+            if (nested > 0)
+            {
+                return nested;
+            }
+        }
+
+        return 12;
     }
 
     private void RefreshChrome()
