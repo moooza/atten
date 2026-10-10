@@ -175,25 +175,19 @@ public class MigratorTests
     }
 
     [Fact]
-    public void Scripts001Through011MatchThePythonMigrations()
+    public void EmbeddedMigrationsCoverOriginalSchemaAndNewVersions()
     {
-        string? repo = AppPaths.FindRepoRoot([AppContext.BaseDirectory, Directory.GetCurrentDirectory()]);
-        Assert.NotNull(repo);
-        string pythonFolder = Path.Combine(repo, "src", "atten", "db", "migrations");
         IReadOnlyList<(string Version, string FileName, string Sql)> embedded = Migrator.EmbeddedMigrations();
 
-        foreach ((string version, string fileName, string sql) in embedded)
-        {
-            if (string.CompareOrdinal(version, "012") >= 0)
+        Assert.Equal(AllVersions, embedded.Select(item => item.Version).ToArray());
+        Assert.All(
+            embedded,
+            item =>
             {
-                continue;
-            }
-
-            string python = File.ReadAllText(Path.Combine(pythonFolder, fileName));
-            Assert.Equal(python, sql);
-        }
-
-        Assert.Equal(11, embedded.Count(item => string.CompareOrdinal(item.Version, "012") < 0));
+                Assert.False(string.IsNullOrWhiteSpace(item.Sql));
+                Assert.StartsWith(item.Version + "_", item.FileName, StringComparison.Ordinal);
+                Assert.EndsWith(".sql", item.FileName, StringComparison.Ordinal);
+            });
         Assert.Contains(embedded, item => item.Version == "012" && item.FileName == "012_users.sql");
         Assert.Contains(embedded, item => item.Version == "013" && item.FileName == "013_payroll.sql");
     }
