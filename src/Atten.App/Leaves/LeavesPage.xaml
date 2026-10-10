@@ -121,7 +121,7 @@
                 VerticalAlignment="Center" />
 
             <Border x:Name="TablePanel" Grid.Row="3" Style="{StaticResource AppPanel}" Visibility="Collapsed">
-                <ListView
+                <theme:AppListView
                     x:Name="LeavesList"
                     Background="{ThemeResource Surface}"
                     BorderThickness="0"
@@ -175,7 +175,7 @@
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
-                </ListView>
+                </theme:AppListView>
             </Border>
         </Grid>
 

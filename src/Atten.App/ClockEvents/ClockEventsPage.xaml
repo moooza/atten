@@ -42,7 +42,7 @@
             Visibility="Collapsed" />
 
         <Border x:Name="TablePanel" Grid.Row="1" Style="{StaticResource AppPanel}">
-            <ListView
+            <theme:AppListView
                 x:Name="EventsList"
                 Background="{ThemeResource Surface}"
                 BorderThickness="0"
@@ -106,7 +106,7 @@
                         </Grid>
                     </DataTemplate>
                 </ListView.ItemTemplate>
-            </ListView>
+            </theme:AppListView>
         </Border>
     </Grid>
 </Page>

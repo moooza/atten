@@ -14,16 +14,22 @@
             </Grid.RowDefinitions>
 
             <Grid Margin="{StaticResource HeaderBottomMargin}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
                 <StackPanel
+                    Grid.Column="0"
                     Orientation="Horizontal"
-                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
                     Spacing="{StaticResource PageGap}">
                     <TextBlock Text="لیست پرسنل" Style="{StaticResource AppTitleText}" />
                     <TextBlock x:Name="CountText" Style="{StaticResource AppCaptionText}" />
                 </StackPanel>
                 <StackPanel
+                    Grid.Column="1"
                     Orientation="Horizontal"
-                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
                     Spacing="{StaticResource FieldGap}">
                     <TextBlock x:Name="Notice" Style="{StaticResource AppDangerText}" />
                     <theme:AppButton
@@ -47,12 +53,13 @@
                 Visibility="Collapsed" />
 
             <Border x:Name="TablePanel" Grid.Row="1" Style="{StaticResource AppPanel}">
-                <ListView
+                <theme:AppListView
                     x:Name="PeopleList"
                     Background="{ThemeResource Surface}"
                     BorderThickness="0"
                     SelectionMode="Single"
                     DoubleTapped="OnRowDoubleTapped"
+                    RightTapped="OnRowRightTapped"
                     SelectionChanged="OnSelectionChanged">
                     <ListView.Header>
                         <Grid>
@@ -62,23 +69,17 @@
                             </Grid.RowDefinitions>
                             <Grid Padding="{StaticResource ListCellPadding}">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="0.6*" />
-                                    <ColumnDefinition Width="1.1*" />
-                                    <ColumnDefinition Width="1.1*" />
-                                    <ColumnDefinition Width="1.3*" />
-                                    <ColumnDefinition Width="0.9*" />
-                                    <ColumnDefinition Width="1.1*" />
-                                    <ColumnDefinition Width="1.3*" />
+                                    <ColumnDefinition Width="0.7*" />
+                                    <ColumnDefinition Width="1.2*" />
                                     <ColumnDefinition Width="1.4*" />
+                                    <ColumnDefinition Width="1.6*" />
+                                    <ColumnDefinition Width="1.1*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="شناسه" Style="{StaticResource AppListHeaderText}" />
                                 <TextBlock Grid.Column="1" Text="کد پرسنلی" Style="{StaticResource AppListHeaderText}" />
                                 <TextBlock Grid.Column="2" Text="نام" Style="{StaticResource AppListHeaderText}" />
                                 <TextBlock Grid.Column="3" Text="نام خانوادگی" Style="{StaticResource AppListHeaderText}" />
                                 <TextBlock Grid.Column="4" Text="ساعت کاری" Style="{StaticResource AppListHeaderText}" />
-                                <TextBlock Grid.Column="5" Text="شماره همراه" Style="{StaticResource AppListHeaderText}" />
-                                <TextBlock Grid.Column="6" Text="تاریخ افزودن" Style="{StaticResource AppListHeaderText}" />
-                                <TextBlock Grid.Column="7" Text="تاریخ به‌روزرسانی" Style="{StaticResource AppListHeaderText}" />
                             </Grid>
                             <Border
                                 Grid.Row="1"
@@ -93,39 +94,22 @@
                         <DataTemplate x:DataType="local:PersonnelRow">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="0.6*" />
-                                    <ColumnDefinition Width="1.1*" />
-                                    <ColumnDefinition Width="1.1*" />
-                                    <ColumnDefinition Width="1.3*" />
-                                    <ColumnDefinition Width="0.9*" />
-                                    <ColumnDefinition Width="1.1*" />
-                                    <ColumnDefinition Width="1.3*" />
+                                    <ColumnDefinition Width="0.7*" />
+                                    <ColumnDefinition Width="1.2*" />
                                     <ColumnDefinition Width="1.4*" />
+                                    <ColumnDefinition Width="1.6*" />
+                                    <ColumnDefinition Width="1.1*" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="{x:Bind IdText}" Style="{StaticResource AppListCellText}" />
                                 <TextBlock Grid.Column="1" Text="{x:Bind RemoteId}" Style="{StaticResource AppListCellText}" />
                                 <TextBlock Grid.Column="2" Text="{x:Bind FirstName}" Style="{StaticResource AppListCellText}" />
                                 <TextBlock Grid.Column="3" Text="{x:Bind LastName}" Style="{StaticResource AppListCellText}" />
                                 <TextBlock Grid.Column="4" Text="{x:Bind DailyHours}" Style="{StaticResource AppListCellText}" />
-                                <TextBlock Grid.Column="5" Text="{x:Bind Mobile}" Style="{StaticResource AppListCellText}" />
-                                <TextBlock Grid.Column="6" Text="{x:Bind CreatedAt}" Style="{StaticResource AppListCellText}" />
-                                <TextBlock Grid.Column="7" Text="{x:Bind UpdatedAt}" Style="{StaticResource AppListCellText}" />
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
-                </ListView>
+                </theme:AppListView>
             </Border>
         </Grid>
-
-        <ScrollViewer
-            x:Name="FormHost"
-            Visibility="Collapsed"
-            VerticalScrollBarVisibility="Auto">
-            <local:PersonnelForm
-                x:Name="Editor"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Top"
-                Margin="{StaticResource FormHostMargin}" />
-        </ScrollViewer>
     </Grid>
 </Page>

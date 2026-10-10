@@ -3,7 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:theme="using:Atten.UI.Theme"
-    FlowDirection="RightToLeft">
+    FlowDirection="LeftToRight">
     <UserControl.KeyboardAccelerators>
         <KeyboardAccelerator Key="Enter" Invoked="OnEnterAccelerator" />
         <KeyboardAccelerator Key="Escape" Invoked="OnEscapeAccelerator" />
@@ -11,19 +11,47 @@
     <Border
         Style="{StaticResource AppPanel}"
         Padding="{StaticResource FormPadding}"
-        MaxWidth="{StaticResource FormMaxWidth}"
-        HorizontalAlignment="Center">
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch">
         <StackPanel>
-            <TextBlock x:Name="Heading" Style="{StaticResource AppTitleText}" />
+            <TextBlock
+                x:Name="Heading"
+                Style="{StaticResource AppTitleText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
 
-            <TextBlock Text="نام" Style="{StaticResource AppFieldLabel}" />
-            <theme:AppTextBox x:Name="FirstNameBox" HorizontalAlignment="Stretch" />
+            <TextBlock
+                Text="نام"
+                Style="{StaticResource AppFieldLabel}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
+            <theme:AppTextBox
+                x:Name="FirstNameBox"
+                HorizontalAlignment="Stretch"
+                FlowDirection="RightToLeft"
+                TextAlignment="Left" />
 
-            <TextBlock Text="نام خانوادگی" Style="{StaticResource AppFieldLabel}" />
-            <theme:AppTextBox x:Name="LastNameBox" HorizontalAlignment="Stretch" />
+            <TextBlock
+                Text="نام خانوادگی"
+                Style="{StaticResource AppFieldLabel}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
+            <theme:AppTextBox
+                x:Name="LastNameBox"
+                HorizontalAlignment="Stretch"
+                FlowDirection="RightToLeft"
+                TextAlignment="Left" />
 
-            <TextBlock Text="میزان ساعت کاری" Style="{StaticResource AppFieldLabel}" />
-            <StackPanel Orientation="Horizontal" Spacing="{StaticResource FieldGap}">
+            <TextBlock
+                Text="میزان ساعت کاری"
+                Style="{StaticResource AppFieldLabel}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                FlowDirection="RightToLeft"
+                Spacing="{StaticResource FieldGap}">
                 <theme:AppTextBox
                     x:Name="HoursBox"
                     Width="{StaticResource CompactFieldWidth}"
@@ -46,28 +74,49 @@
             <TextBlock
                 Text="دقیقه را از ۰ تا ۵۹ وارد کنید."
                 Style="{StaticResource AppCaptionText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right"
                 Margin="{StaticResource FieldHintMargin}" />
 
-            <TextBlock Text="کد پرسنلی (اختیاری)" Style="{StaticResource AppFieldLabel}" />
+            <TextBlock
+                Text="کد پرسنلی (اختیاری)"
+                Style="{StaticResource AppFieldLabel}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
             <theme:AppTextBox x:Name="RemoteIdBox" HorizontalAlignment="Stretch" />
 
-            <TextBlock Text="شماره همراه (اختیاری)" Style="{StaticResource AppFieldLabel}" />
+            <TextBlock
+                Text="شماره همراه (اختیاری)"
+                Style="{StaticResource AppFieldLabel}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
             <theme:AppTextBox x:Name="MobileBox" HorizontalAlignment="Stretch" />
 
-            <TextBlock Text="تاریخ شروع همکاری" Style="{StaticResource AppFieldLabel}" />
+            <TextBlock
+                Text="تاریخ شروع همکاری"
+                Style="{StaticResource AppFieldLabel}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
             <theme:ShamsiDateField x:Name="StartField" HorizontalAlignment="Stretch" />
 
-            <TextBlock Text="تاریخ پایان همکاری" Style="{StaticResource AppFieldLabel}" />
+            <TextBlock
+                Text="تاریخ پایان همکاری"
+                Style="{StaticResource AppFieldLabel}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
             <theme:ShamsiDateField x:Name="EndField" HorizontalAlignment="Stretch" />
 
             <TextBlock
                 x:Name="ErrorText"
                 Style="{StaticResource AppDangerText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right"
                 Margin="0,8,0,0" />
 
             <StackPanel
                 Orientation="Horizontal"
                 HorizontalAlignment="Right"
+                FlowDirection="RightToLeft"
                 Spacing="{StaticResource FieldGap}"
                 Margin="{StaticResource FormActionsMargin}">
                 <theme:AppButton
