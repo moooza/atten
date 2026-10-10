@@ -23,7 +23,7 @@ from atten.db.repository import (
     update_leave,
     update_personnel,
 )
-from atten.leave import compose_leave_minutes, shamsi_year_span
+from atten.leave import CARRY_LEAVE_MINUTES, YEARLY_LEAVE_MINUTES, compose_leave_minutes, shamsi_year_span
 
 
 def test_migrate_creates_schema_and_is_idempotent(tmp_path):
@@ -577,7 +577,14 @@ def test_leave_stores_minutes_and_keeps_each_shamsi_year_separate(tmp_path, monk
     db_file = tmp_path / "atten.db"
     migrate(db_file)
     monkeypatch.setattr("atten.db.repository._timestamp", lambda: "2026-10-07T16:30:00")
-    person_id = add_personnel("علی", "رضایی", 8, remote_id="dev-1", db_file=db_file)
+    person_id = add_personnel(
+        "علی",
+        "رضایی",
+        8,
+        remote_id="dev-1",
+        cooperation_start=parse_shamsi_date("1404/01/01"),
+        db_file=db_file,
+    )
     current = parse_shamsi_date("1405/06/15")
     previous = parse_shamsi_date("1404/06/15")
     amount = compose_leave_minutes(1, 2, 15)
@@ -600,8 +607,69 @@ def test_leave_stores_minutes_and_keeps_each_shamsi_year_separate(tmp_path, monk
     assert list_leaves(person_id, parse_shamsi_date("1405/07/01"), parse_shamsi_date("1405/07/10"), db_file=db_file) == []
 
     with pytest.raises(ValueError, match="بیشتر است"):
-        add_leave(person_id, current, current, compose_leave_minutes(30, 0, 0), db_file=db_file)
+        add_leave(
+            person_id,
+            current,
+            current,
+            YEARLY_LEAVE_MINUTES + CARRY_LEAVE_MINUTES,
+            db_file=db_file,
+        )
     with pytest.raises(ValueError, match="تاریخ پایان"):
         add_leave(person_id, current, previous, 15, db_file=db_file)
     with pytest.raises(ValueError, match="وجود ندارد"):
         add_leave(99, current, current, 15, db_file=db_file)
+
+
+def test_saving_leave_rejects_more_than_the_settled_remainder(tmp_path):
+    db_file = tmp_path / "atten.db"
+    migrate(db_file)
+    day = parse_shamsi_date("1405/06/15")
+    missing = add_personnel("علی", "رضایی", 8, remote_id="dev-1", db_file=db_file)
+    with pytest.raises(ValueError, match="باقی‌مانده: 0 روز و 0 ساعت و 0 دقیقه"):
+        add_leave(missing, day, day, 1, db_file=db_file)
+
+    one_day = parse_shamsi_date("1405/01/01")
+    partial = add_personnel(
+        "مریم",
+        "احمدی",
+        8,
+        remote_id="dev-2",
+        cooperation_start=one_day,
+        cooperation_end=one_day,
+        db_file=db_file,
+    )
+    add_leave(partial, one_day, one_day, 35, db_file=db_file)
+    with pytest.raises(ValueError, match="باقی‌مانده: 0 روز و 0 ساعت و 0 دقیقه"):
+        add_leave(partial, one_day, one_day, 1, db_file=db_file)
+
+    carried = add_personnel(
+        "سارا",
+        "کریمی",
+        8,
+        remote_id="dev-3",
+        cooperation_start=parse_shamsi_date("1404/01/01"),
+        db_file=db_file,
+    )
+    allowance = YEARLY_LEAVE_MINUTES + CARRY_LEAVE_MINUTES
+    leave_id = add_leave(carried, day, day, allowance, db_file=db_file)
+    with pytest.raises(ValueError, match="بیشتر است"):
+        add_leave(carried, day, day, 1, db_file=db_file)
+    update_leave(leave_id, carried, day, day, allowance, db_file=db_file)
+    with pytest.raises(ValueError, match="بیشتر است"):
+        update_leave(leave_id, carried, day, day, allowance + 1, db_file=db_file)
+    before = parse_shamsi_date("1403/06/15")
+    with pytest.raises(ValueError, match="باقی‌مانده: 0 روز و 0 ساعت و 0 دقیقه"):
+        update_leave(leave_id, carried, before, before, 1, db_file=db_file)
+    assert list_leaves(carried, db_file=db_file)[0]["minutes"] == allowance
+
+    gapped = add_personnel(
+        "نادر",
+        "موسوی",
+        8,
+        remote_id="dev-4",
+        cooperation_start=parse_shamsi_date("1402/01/01"),
+        cooperation_end=parse_shamsi_date("1402/12/29"),
+        db_file=db_file,
+    )
+    with pytest.raises(ValueError, match="باقی‌مانده: 0 روز و 0 ساعت و 0 دقیقه"):
+        add_leave(gapped, day, day, 1, db_file=db_file)

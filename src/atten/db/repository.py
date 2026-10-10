@@ -9,7 +9,7 @@ from pathlib import Path
 from atten.attlog import AttlogRow
 from atten.dates import storage_date, storage_datetime
 from atten.db.connection import connect
-from atten.leave import YEARLY_LEAVE_MINUTES, format_leave_amount, shamsi_year_of, shamsi_year_span
+from atten.leave import format_leave_amount, remaining_leave_minutes, shamsi_year_of
 from atten.paths import db_path
 from atten.persian import english_digits, normalize_text
 
@@ -317,25 +317,41 @@ def _reject_if_leave_exceeds(
     amount: int,
     exclude_id: int | None,
 ) -> None:
+    person = conn.execute(
+        "SELECT cooperation_start, cooperation_end FROM personnel WHERE id = ?",
+        (person_id,),
+    ).fetchone()
     year = shamsi_year_of(date.fromisoformat(start))
-    span_start, span_end = shamsi_year_span(year)
-    params: list[object] = [person_id, storage_date(span_start), storage_date(span_end)]
+    remaining = remaining_leave_minutes(
+        year,
+        person["cooperation_start"],
+        person["cooperation_end"],
+        _used_leave_minutes_by_year(conn, person_id, exclude_id),
+    )
+    if amount > remaining:
+        left = format_leave_amount(max(remaining, 0))
+        raise ValueError(f"این مرخصی از مانده سال {year} بیشتر است. باقی‌مانده: {left}")
+
+
+def _used_leave_minutes_by_year(conn, person_id: int, exclude_id: int | None) -> dict[int, int]:
+    params: list[object] = [person_id]
     exclude = ""
     if exclude_id is not None:
         exclude = " AND id != ?"
         params.append(exclude_id)
-    used = conn.execute(
+    rows = conn.execute(
         f"""
-        SELECT COALESCE(SUM(minutes), 0) AS total
+        SELECT start_date, minutes
         FROM leaves
-        WHERE personnel_id = ? AND start_date >= ? AND start_date <= ?{exclude}
+        WHERE personnel_id = ?{exclude}
         """,
         params,
-    ).fetchone()
-    remaining = YEARLY_LEAVE_MINUTES - int(used["total"])
-    if amount > remaining:
-        left = format_leave_amount(max(remaining, 0))
-        raise ValueError(f"این مرخصی از مانده سال {year} بیشتر است. باقی‌مانده: {left}")
+    ).fetchall()
+    used: dict[int, int] = {}
+    for row in rows:
+        year = shamsi_year_of(row["start_date"])
+        used[year] = used.get(year, 0) + int(row["minutes"])
+    return used
 
 
 def _leave_id(value: int) -> int:
