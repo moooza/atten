@@ -105,6 +105,14 @@ public static class AppMessages
 
     public const string LeaveSelectOne = "یک مرخصی را از لیست انتخاب کنید.";
 
+    public const string LeaveDelete = "حذف";
+
+    public const string LeaveDeleteTitle = "حذف مرخصی";
+
+    public const string LeaveDeleteFailed = "حذف مرخصی ممکن نشد";
+
+    public const string LeaveDeleteAsk = "این مرخصی حذف شود؟";
+
     public const string LeaveAdd = "ثبت مرخصی";
 
     public const string LeaveEdit = "ویرایش مرخصی";
@@ -190,6 +198,12 @@ public static class AppMessages
     public static string LeavePreview(int minutes)
     {
         return $"معادل: {Leave.FormatLeaveAmount(minutes)}";
+    }
+
+    public static string LeaveSpan(string startDate, string endDate, string amount)
+    {
+        string range = startDate == endDate ? startDate : $"{startDate} تا {endDate}";
+        return $"{range} — {amount}";
     }
 
     public static string LeaveBalanceNow(int year, int minutes)

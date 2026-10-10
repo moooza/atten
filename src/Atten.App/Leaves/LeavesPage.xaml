@@ -133,6 +133,7 @@
                     BorderThickness="0"
                     SelectionMode="Single"
                     DoubleTapped="OnRowDoubleTapped"
+                    RightTapped="OnRowRightTapped"
                     SelectionChanged="OnSelectionChanged">
                     <ListView.Header>
                         <Grid>

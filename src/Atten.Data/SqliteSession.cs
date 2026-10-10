@@ -93,6 +93,7 @@ internal static class RepositoryGuard
     public const string LeaveAmount = "میزان مرخصی را وارد کنید.";
     public const string PersonnelSave = "ذخیره پرسنل ممکن نشد.";
     public const string LeaveSave = "ثبت مرخصی ممکن نشد.";
+    public const string LeaveDelete = "حذف مرخصی ممکن نشد.";
     public const string ClockSave = "ثبت ورود و خروج ممکن نشد.";
     public const string MissingPayroll = "این حقوق دیگر وجود ندارد.";
     public const string ChoosePayroll = "یک حقوق را انتخاب کنید.";
@@ -239,6 +240,11 @@ internal static class RepositoryGuard
     public static Exception LeaveSaveError(SqliteException ex)
     {
         return new ArgumentException(LeaveSave, ex);
+    }
+
+    public static Exception LeaveDeleteError(SqliteException ex)
+    {
+        return new ArgumentException(LeaveDelete, ex);
     }
 
     public static Exception ClockSaveError(SqliteException ex)

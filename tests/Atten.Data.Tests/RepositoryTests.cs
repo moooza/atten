@@ -428,6 +428,11 @@ public class RepositoryTests : IDisposable
         ArgumentException missing = Assert.Throws<ArgumentException>(
             () => store.Leaves.Add(99, current, current, 15));
         Assert.Contains("وجود ندارد", missing.Message, StringComparison.Ordinal);
+
+        store.Leaves.Delete(leaveId);
+        Assert.Equal([30], store.Leaves.List(personId).Select(row => row.Minutes));
+        ArgumentException gone = Assert.Throws<ArgumentException>(() => store.Leaves.Delete(leaveId));
+        Assert.Contains("وجود ندارد", gone.Message, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -93,6 +93,28 @@ internal sealed class SqliteLeaveRepository : ILeaveRepository
             RepositoryGuard.LeaveSaveError);
     }
 
+    public void Delete(long leaveId)
+    {
+        long leaveKey = RepositoryGuard.LeaveId(leaveId);
+        _session.Write(
+            connection =>
+            {
+                using SqliteCommand found = connection.CreateCommand();
+                found.CommandText = "SELECT 1 FROM leaves WHERE id = $id";
+                found.Parameters.AddWithValue("$id", leaveKey);
+                if (found.ExecuteScalar() is null)
+                {
+                    throw new ArgumentException(RepositoryGuard.MissingLeave);
+                }
+
+                using SqliteCommand command = connection.CreateCommand();
+                command.CommandText = "DELETE FROM leaves WHERE id = $id";
+                command.Parameters.AddWithValue("$id", leaveKey);
+                command.ExecuteNonQuery();
+            },
+            RepositoryGuard.LeaveDeleteError);
+    }
+
     public IReadOnlyList<LeaveRecord> List(long personnelId, DateOnly? startDate = null, DateOnly? endDate = null)
     {
         long personId = RepositoryGuard.PersonId(personnelId);

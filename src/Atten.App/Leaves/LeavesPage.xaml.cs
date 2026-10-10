@@ -1,8 +1,12 @@
+using Atten.App.Shared;
 using Atten.Core;
 using Atten.Data;
+using Atten.UI.Theme;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Windows.Graphics;
 
 namespace Atten.App.Leaves;
@@ -48,6 +52,28 @@ public sealed partial class LeavesPage : Page
     private void OnRowDoubleTapped(object sender, DoubleTappedRoutedEventArgs args)
     {
         OpenSelected();
+    }
+
+    private void OnRowRightTapped(object sender, RightTappedRoutedEventArgs args)
+    {
+        if (RowFrom(args.OriginalSource) is not LeaveRow row)
+        {
+            return;
+        }
+
+        LeavesList.SelectedItem = row;
+        Notice.Text = string.Empty;
+        var menu = new AppMenuFlyout();
+        var edit = new AppMenuItem { Text = "ویرایش" };
+        edit.Click += (_, _) => OpenForm(row.Record.PersonnelId, row.Record);
+        var remove = new AppMenuItem { Text = AppMessages.LeaveDelete };
+        remove.Click += async (_, _) => await DeleteLeave(row);
+        menu.Items.Add(edit);
+        menu.Items.Add(remove);
+        if (args.OriginalSource is FrameworkElement target)
+        {
+            menu.ShowAt(target, args.GetPosition(target));
+        }
     }
 
     private void OnSelectionChanged(object sender, SelectionChangedEventArgs args)
@@ -102,6 +128,142 @@ public sealed partial class LeavesPage : Page
 
         _editor.Bind(_store, _people, personnelId, leave);
         _editorWindow.BringForward();
+    }
+
+    private static LeaveRow? RowFrom(object? source)
+    {
+        DependencyObject? current = source as DependencyObject;
+        while (current is not null)
+        {
+            if (current is FrameworkElement { DataContext: LeaveRow row })
+            {
+                return row;
+            }
+
+            if (current is ListViewItem { Content: LeaveRow item })
+            {
+                return item;
+            }
+
+            current = VisualTreeHelper.GetParent(current);
+        }
+
+        return null;
+    }
+
+    private async Task DeleteLeave(LeaveRow row)
+    {
+        if (_store is null)
+        {
+            Notice.Text = AppMessages.LeaveListFailed;
+            return;
+        }
+
+        if (!await ConfirmDelete(row))
+        {
+            return;
+        }
+
+        try
+        {
+            _store.Delete(row.Record.Id);
+            Reload(keepYears: true);
+        }
+        catch (Exception ex)
+        {
+            Notice.Text = $"{AppMessages.LeaveDeleteFailed}: {ex.Message}";
+        }
+    }
+
+    private async Task<bool> ConfirmDelete(LeaveRow row)
+    {
+        string person = PersonPicker.SelectedPerson is PersonnelRecord chosen
+            ? PersonnelPicker.FormatLabel(chosen)
+            : AppMessages.ChoosePersonnel;
+        string leave = AppMessages.LeaveSpan(row.StartDate, row.EndDate, row.Amount);
+        Brush accent = Theme.Brush(this, Tokens.Accent);
+        var heading = new TextBlock { Text = AppMessages.LeaveDeleteTitle };
+        ApplyTextStyle(heading, "AppTitleText");
+        AlignRight(heading);
+        var ask = new TextBlock { Text = AppMessages.LeaveDeleteAsk };
+        ApplyTextStyle(ask, "AppInkText");
+        AlignRight(ask);
+        var personLine = HighlightedLine("کارمند: ", person, accent);
+        var leaveLine = HighlightedLine("مرخصی: ", leave, accent);
+        var cancel = new AppButton
+        {
+            Content = "انصراف",
+            Kind = AppButtonKind.Primary,
+        };
+        var remove = new AppButton
+        {
+            Content = AppMessages.LeaveDelete,
+            Kind = AppButtonKind.Danger,
+        };
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            FlowDirection = FlowDirection.RightToLeft,
+            Spacing = 8,
+            Margin = new Thickness(0, 12, 0, 0),
+        };
+        actions.Children.Add(cancel);
+        actions.Children.Add(remove);
+
+        var body = new StackPanel
+        {
+            Spacing = 6,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            FlowDirection = FlowDirection.LeftToRight,
+        };
+        body.Children.Add(ask);
+        body.Children.Add(personLine);
+        body.Children.Add(leaveLine);
+        body.Children.Add(actions);
+
+        var dialog = new ContentDialog
+        {
+            Title = heading,
+            Content = body,
+            XamlRoot = XamlRoot,
+            FlowDirection = FlowDirection.RightToLeft,
+            RequestedTheme = ActualTheme,
+        };
+        bool confirmed = false;
+        cancel.Click += (_, _) => dialog.Hide();
+        remove.Click += (_, _) =>
+        {
+            confirmed = true;
+            dialog.Hide();
+        };
+        await dialog.ShowAsync();
+        return confirmed;
+    }
+
+    private static TextBlock HighlightedLine(string label, string value, Brush accent)
+    {
+        var block = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        ApplyTextStyle(block, "AppInkText");
+        AlignRight(block);
+        block.Inlines.Add(new Run { Text = label });
+        block.Inlines.Add(new Run { Text = value, Foreground = accent });
+        return block;
+    }
+
+    private static void AlignRight(TextBlock block)
+    {
+        block.FlowDirection = FlowDirection.LeftToRight;
+        block.TextAlignment = TextAlignment.Right;
+        block.HorizontalAlignment = HorizontalAlignment.Stretch;
+    }
+
+    private static void ApplyTextStyle(TextBlock block, string key)
+    {
+        if (Application.Current.Resources.TryGetValue(key, out object? resource) && resource is Style style)
+        {
+            block.Style = style;
+        }
     }
 
     private void OnEditorSaved(object? sender, EventArgs args)

@@ -68,6 +68,8 @@ public interface ILeaveRepository
 
     void Update(long leaveId, long personnelId, DateOnly startDate, DateOnly endDate, int minutes);
 
+    void Delete(long leaveId);
+
     IReadOnlyList<LeaveRecord> List(long personnelId, DateOnly? startDate = null, DateOnly? endDate = null);
 
     int SumMinutes(long personnelId, DateOnly startDate, DateOnly endDate);
