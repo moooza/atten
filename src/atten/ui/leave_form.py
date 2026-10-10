@@ -60,7 +60,7 @@ class LeaveForm(tk.Toplevel):
         ).pack(anchor="e", padx=18, pady=(16, 4))
         tk.Label(
             body,
-            text="هر روز مرخصی ۷ ساعت و ۲۰ دقیقه است. سقف هر سال ۳۰ روز است.",
+            text="هر روز مرخصی ۷ ساعت و ۲۰ دقیقه است. هر ماه ۲٫۵ روز، انتقال حداکثر ۹ روز.",
             font=(UI_FONT, 9),
             bg=PANEL,
             fg=MUTED,
@@ -210,20 +210,22 @@ class LeaveForm(tk.Toplevel):
         )
         row = tk.Frame(parent, bg=PANEL)
         row.pack(fill="x", padx=18)
+        self.duration_row = row
         self._days_validate = (self.register(self._accept_whole_number), "%P")
         self._hours_validate = (self.register(self._accept_whole_number), "%P")
         self._minutes_validate = (self.register(self._accept_minutes), "%P")
-        self._duration_entry(row, self.leave_minutes, self._minutes_validate)
-        tk.Label(row, text="دقیقه", font=(UI_FONT, 10), bg=PANEL, fg=INK).pack(
-            side="right", padx=(0, 6)
+        # Packed from the right so the reading order is روز، ساعت، دقیقه.
+        self._duration_entry(row, self.leave_days, self._days_validate)
+        tk.Label(row, text="روز", font=(UI_FONT, 10), bg=PANEL, fg=INK).pack(
+            side="right", padx=(12, 6)
         )
         self._duration_entry(row, self.leave_hours, self._hours_validate)
         tk.Label(row, text="ساعت", font=(UI_FONT, 10), bg=PANEL, fg=INK).pack(
             side="right", padx=(12, 6)
         )
-        self._duration_entry(row, self.leave_days, self._days_validate)
-        tk.Label(row, text="روز", font=(UI_FONT, 10), bg=PANEL, fg=INK).pack(
-            side="right", padx=(12, 6)
+        self._duration_entry(row, self.leave_minutes, self._minutes_validate)
+        tk.Label(row, text="دقیقه", font=(UI_FONT, 10), bg=PANEL, fg=INK).pack(
+            side="right", padx=(0, 6)
         )
 
     def _duration_entry(

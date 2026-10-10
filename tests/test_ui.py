@@ -658,7 +658,14 @@ def test_calculation_uses_leave_to_cover_a_short_day_and_a_multi_day_absence(tmp
     db_file = tmp_path / "atten.db"
     migrate(db_file)
     daily_hours = 7 + 20 / 60
-    person_id = add_personnel("هانیه", "ابراهیمی", daily_hours, remote_id="1013", db_file=db_file)
+    person_id = add_personnel(
+        "هانیه",
+        "ابراهیمی",
+        daily_hours,
+        remote_id="1013",
+        cooperation_start=parse_shamsi_date("1405/01/01"),
+        db_file=db_file,
+    )
     add_clock_event("1013", "هانیه ابراهیمی", "2026-09-30", "09:43:10", db_file=db_file)
     add_clock_event("1013", "هانیه ابراهیمی", "2026-09-30", "13:50:33", db_file=db_file)
     add_leave(person_id, "2026-09-30", "2026-09-30", 193, db_file=db_file)
@@ -718,7 +725,14 @@ def test_calculation_uses_leave_to_cover_a_short_day_and_a_multi_day_absence(tmp
 def test_calculation_resets_a_day_and_prefills_leave_for_a_shortfall(tmp_path, monkeypatch):
     db_file = tmp_path / "atten.db"
     migrate(db_file)
-    person_id = add_personnel("علی", "رضایی", 8, remote_id="dev-1", db_file=db_file)
+    person_id = add_personnel(
+        "علی",
+        "رضایی",
+        8,
+        remote_id="dev-1",
+        cooperation_start=parse_shamsi_date("1405/01/01"),
+        db_file=db_file,
+    )
     add_clock_event("dev-1", "علی رضایی", "2026-10-08", "09:00:00", db_file=db_file)
     add_clock_event("dev-1", "علی رضایی", "2026-10-07", "08:00:00", db_file=db_file)
     add_clock_event("dev-1", "علی رضایی", "2026-10-07", "17:00:00", db_file=db_file)
@@ -797,7 +811,7 @@ def test_calculation_resets_a_day_and_prefills_leave_for_a_shortfall(tmp_path, m
         assert form.leave_days.get() == "1"
         assert form.leave_hours.get() == "0"
         assert form.leave_minutes.get() == "40"
-        assert form.preview.cget("text") == "معادل: 1 روز، 0 ساعت و 40 دقیقه"
+        assert form.preview.cget("text") == "معادل: 1 روز و 0 ساعت و 40 دقیقه"
         form.save()
         root.update()
 
@@ -815,12 +829,30 @@ def test_calculation_resets_a_day_and_prefills_leave_for_a_shortfall(tmp_path, m
         root.destroy()
 
 
+def _balance_text(body: tk.Misc) -> str:
+    """Reading order of a balance card: the first packed run sits on the right."""
+    lines = []
+    for row in body.pack_slaves():
+        parts = row.pack_slaves()
+        assert parts
+        assert {part.pack_info()["side"] for part in parts} == {"right"}
+        lines.append("".join(part.cget("text") for part in parts))
+    return "\n".join(lines)
+
+
 def test_leaves_menu_lists_a_person_and_subtracts_the_yearly_allowance(tmp_path, monkeypatch):
     db_file = tmp_path / "atten.db"
     migrate(db_file)
     monkeypatch.setattr("atten.db.repository._timestamp", lambda: "2026-10-07T16:30:00")
-    add_personnel("علی", "رضایی", 8, remote_id="dev-1", db_file=db_file)
     year = shamsi_year_of(date.today())
+    add_personnel(
+        "علی",
+        "رضایی",
+        8,
+        remote_id="dev-1",
+        cooperation_start=parse_shamsi_date(f"{year:04d}/01/01"),
+        db_file=db_file,
+    )
     leave_day = parse_shamsi_date(f"{year:04d}/06/15")
     shown = format_shamsi_date(leave_day)
 
@@ -847,9 +879,32 @@ def test_leaves_menu_lists_a_person_and_subtracts_the_yearly_allowance(tmp_path,
         view.person_combo.current(0)
         view.person_combo.event_generate("<<ComboboxSelected>>")
         root.update()
-        assert view.allowance_label.cget("text") == f"مجاز سال {year}: 30 روز، 0 ساعت و 0 دقیقه"
-        assert view.used_label.cget("text") == "ثبت‌شده: 0 روز، 0 ساعت و 0 دقیقه"
-        assert view.remaining_label.cget("text") == "باقی‌مانده: 30 روز، 0 ساعت و 0 دقیقه"
+        assert view.checked_years == {year}
+        assert view.year_button.caption.cget("text") == f"سال {year}"
+        cards = view.year_rows[year]
+        assert cards.year_label.cget("text") == f"سال {year}"
+        assert cards.notice is None
+        assert list(cards.line.pack_slaves()) == [
+            cards.carry_card,
+            cards.earned_card,
+            cards.used_card,
+            cards.remaining_card,
+            cards.transfer_card,
+        ]
+        assert cards.carry_card.winfo_children()[0].cget("text") == "ذخیره (از سال قبل)"
+        assert cards.earned_card.winfo_children()[0].cget("text") == "استحقاق"
+        assert cards.used_card.winfo_children()[0].cget("text") == "ثبت شده"
+        assert cards.remaining_card.winfo_children()[0].cget("text") == "مانده"
+        assert cards.transfer_card.winfo_children()[0].cget("text") == "انتقال (به سال بعد)"
+        assert _balance_text(cards.carry_label) == "0 روز و 0 ساعت و 0 دقیقه"
+        assert _balance_text(cards.earned_label) == "30 روز و 0 ساعت و 0 دقیقه"
+        assert cards.earned_label.pack_slaves()[0].pack_slaves()[0].cget("text") == "30"
+        assert _balance_text(cards.used_label) == "0 روز و 0 ساعت و 0 دقیقه"
+        assert _balance_text(cards.remaining_label) == (
+            "قبل از انتقال 30 روز و 0 ساعت و 0 دقیقه\n"
+            "بعد از انتقال 21 روز و 0 ساعت و 0 دقیقه"
+        )
+        assert _balance_text(cards.transfer_label) == "9 روز و 0 ساعت و 0 دقیقه"
         assert view.empty.cget("text") == "برای این پرسنل مرخصی ثبت نشده است."
 
         view.add_button.event_generate("<Button-1>")
@@ -859,6 +914,11 @@ def test_leaves_menu_lists_a_person_and_subtracts_the_yearly_allowance(tmp_path,
         assert form.title() == "ثبت مرخصی"
         assert form.save_button.caption.cget("text") == "ثبت"
         assert form.person_combo.get() == "علی رضایی (dev-1)"
+        assert [
+            widget.cget("text")
+            for widget in form.duration_row.pack_slaves()
+            if isinstance(widget, tk.Label)
+        ] == ["روز", "ساعت", "دقیقه"]
 
         form.save()
         assert form.winfo_exists()
@@ -875,30 +935,43 @@ def test_leaves_menu_lists_a_person_and_subtracts_the_yearly_allowance(tmp_path,
         form.leave_hours.set("2")
         form.leave_minutes.set("15")
         root.update()
-        assert form.preview.cget("text") == "معادل: 1 روز، 2 ساعت و 15 دقیقه"
+        assert form.preview.cget("text") == "معادل: 1 روز و 2 ساعت و 15 دقیقه"
         form.save()
         root.update()
 
         assert not form.winfo_exists()
+        assert view.checked_years == {year}
         assert view.count.cget("text") == "1 مورد"
         added = format_shamsi_datetime("2026-10-07T16:30:00")
         values = [view.tree.item(item, "values") for item in view.tree.get_children()]
-        assert values == [(added, "1 روز، 2 ساعت و 15 دقیقه", shown, shown, "1")]
-        assert view.used_label.cget("text") == "ثبت‌شده: 1 روز، 2 ساعت و 15 دقیقه"
-        assert view.remaining_label.cget("text") == "باقی‌مانده: 28 روز، 5 ساعت و 5 دقیقه"
+        assert values == [(added, "1 روز و 2 ساعت و 15 دقیقه", shown, shown, "1")]
+        amount_runs = view._amount_cells[1].labels
+        assert amount_runs[0].cget("text") == "1"
+        assert amount_runs[0].pack_info()["side"] == "right"
+        cards = view.year_rows[year]
+        assert _balance_text(cards.used_label) == "1 روز و 2 ساعت و 15 دقیقه"
+        assert _balance_text(cards.remaining_label) == (
+            "قبل از انتقال 28 روز و 5 ساعت و 5 دقیقه\n"
+            "بعد از انتقال 19 روز و 5 ساعت و 5 دقیقه"
+        )
+        assert _balance_text(cards.transfer_label) == "9 روز و 0 ساعت و 0 دقیقه"
 
-        view.start_date.set(format_shamsi_date(parse_shamsi_date(f"{year:04d}/07/01")))
-        view.end_date.set(format_shamsi_date(parse_shamsi_date(f"{year:04d}/07/10")))
-        view.show_button.event_generate("<Button-1>")
+        view.year_button.event_generate("<Button-1>")
         root.update()
+        popup = view.year_popup
+        assert popup is not None
+        assert list(popup.variables) == [year]
+        assert popup.variables[year].get() is True
+        popup.checks[year].invoke()
+        root.update()
+        assert view.checked_years == set()
+        assert view.year_rows == {}
         assert view.tree.get_children() == ()
-        assert view.empty.cget("text") == "در این بازه مرخصی ثبت نشده است."
-        assert view.used_label.cget("text") == "ثبت‌شده: 1 روز، 2 ساعت و 15 دقیقه"
+        assert view.empty.cget("text") == "سال را انتخاب کنید."
 
-        view.start_date.set(format_shamsi_date(parse_shamsi_date(f"{year:04d}/06/01")))
-        view.end_date.set(format_shamsi_date(parse_shamsi_date(f"{year:04d}/06/31")))
-        view.show_button.event_generate("<Button-1>")
+        popup.checks[year].invoke()
         root.update()
+        assert view.checked_years == {year}
         assert view.count.cget("text") == "1 مورد"
         assert view.tree.get_children() != ()
 
@@ -914,8 +987,15 @@ def test_edit_leave_updates_the_selected_row(tmp_path, monkeypatch):
     db_file = tmp_path / "atten.db"
     migrate(db_file)
     monkeypatch.setattr("atten.db.repository._timestamp", lambda: "2026-10-07T16:30:00")
-    person_id = add_personnel("علی", "رضایی", 8, remote_id="dev-1", db_file=db_file)
     year = shamsi_year_of(date.today())
+    person_id = add_personnel(
+        "علی",
+        "رضایی",
+        8,
+        remote_id="dev-1",
+        cooperation_start=parse_shamsi_date(f"{year:04d}/01/01"),
+        db_file=db_file,
+    )
     leave_day = parse_shamsi_date(f"{year:04d}/06/15")
     shown = format_shamsi_date(leave_day)
     add_leave(person_id, leave_day, leave_day, compose_leave_minutes(1, 2, 15), db_file=db_file)
@@ -951,7 +1031,7 @@ def test_edit_leave_updates_the_selected_row(tmp_path, monkeypatch):
         assert form.leave_days.get() == "1"
         assert form.leave_hours.get() == "2"
         assert form.leave_minutes.get() == "15"
-        assert form.preview.cget("text") == "معادل: 1 روز، 2 ساعت و 15 دقیقه"
+        assert form.preview.cget("text") == "معادل: 1 روز و 2 ساعت و 15 دقیقه"
 
         monkeypatch.setattr("atten.db.repository._timestamp", lambda: "2026-10-08T09:15:00")
         form.leave_minutes.set("45")
@@ -961,13 +1041,160 @@ def test_edit_leave_updates_the_selected_row(tmp_path, monkeypatch):
         assert not form.winfo_exists()
         added = format_shamsi_datetime("2026-10-07T16:30:00")
         values = [view.tree.item(item, "values") for item in view.tree.get_children()]
-        assert values == [(added, "1 روز، 2 ساعت و 45 دقیقه", shown, shown, "1")]
-        assert view.used_label.cget("text") == "ثبت‌شده: 1 روز، 2 ساعت و 45 دقیقه"
-        assert view.remaining_label.cget("text") == "باقی‌مانده: 28 روز، 4 ساعت و 35 دقیقه"
+        assert values == [(added, "1 روز و 2 ساعت و 45 دقیقه", shown, shown, "1")]
+        assert view._amount_cells[1].labels[0].cget("text") == "1"
+        assert view._amount_cells[1].labels[0].pack_info()["side"] == "right"
+        cards = view.year_rows[year]
+        assert _balance_text(cards.used_label) == "1 روز و 2 ساعت و 45 دقیقه"
+        assert _balance_text(cards.remaining_label) == (
+            "قبل از انتقال 28 روز و 4 ساعت و 35 دقیقه\n"
+            "بعد از انتقال 19 روز و 4 ساعت و 35 دقیقه"
+        )
+        assert _balance_text(cards.transfer_label) == "9 روز و 0 ساعت و 0 دقیقه"
         stored = list_leaves(person_id, db_file=db_file)[0]
         assert stored["created_at"] == "2026-10-07T16:30:00"
         assert stored["updated_at"] == "2026-10-08T09:15:00"
         assert stored["minutes"] == compose_leave_minutes(1, 2, 45)
+    finally:
+        root.destroy()
+
+
+def test_leave_year_filter_keeps_several_years_and_resets_with_the_person(tmp_path, monkeypatch):
+    db_file = tmp_path / "atten.db"
+    migrate(db_file)
+    monkeypatch.setattr("atten.db.repository._timestamp", lambda: "2026-10-07T16:30:00")
+    year = shamsi_year_of(date.today())
+    previous = year - 1
+    previous_day = parse_shamsi_date(f"{previous:04d}/06/15")
+    current_day = parse_shamsi_date(f"{year:04d}/06/15")
+    person_id = add_personnel(
+        "علی",
+        "رضایی",
+        8,
+        remote_id="dev-1",
+        cooperation_start=parse_shamsi_date(f"{previous:04d}/01/01"),
+        db_file=db_file,
+    )
+    add_personnel("مریم", "احمدی", 8, remote_id="dev-2", db_file=db_file)
+    day = compose_leave_minutes(1, 0, 0)
+    add_leave(person_id, previous_day, previous_day, day, db_file=db_file)
+    add_leave(person_id, current_day, current_day, day, db_file=db_file)
+
+    root = tk.Tk()
+    root.attributes("-alpha", 0)
+    try:
+        window = MainWindow(root, db_file=db_file)
+        window.show_leaves()
+        root.update()
+        view = window.leaves_view
+        assert view.checked_years == {year}
+        assert view.year_button.caption.cget("text") == f"سال {year}"
+
+        view.person_combo.current(0)
+        view.person_combo.event_generate("<<ComboboxSelected>>")
+        root.update()
+        assert view.checked_years == {year}
+        current = view.year_rows[year]
+        assert _balance_text(current.carry_label) == "9 روز و 0 ساعت و 0 دقیقه"
+        assert _balance_text(current.earned_label) == "30 روز و 0 ساعت و 0 دقیقه"
+        assert _balance_text(current.used_label) == "1 روز و 0 ساعت و 0 دقیقه"
+        assert _balance_text(current.remaining_label) == (
+            "قبل از انتقال 38 روز و 0 ساعت و 0 دقیقه\n"
+            "بعد از انتقال 29 روز و 0 ساعت و 0 دقیقه"
+        )
+        assert _balance_text(current.transfer_label) == "9 روز و 0 ساعت و 0 دقیقه"
+
+        view.year_button.event_generate("<Button-1>")
+        root.update()
+        popup = view.year_popup
+        assert popup is not None
+        assert list(popup.variables) == [year, previous]
+        popup.checks[previous].invoke()
+        root.update()
+        assert view.checked_years == {year, previous}
+        assert view.year_button.caption.cget("text") == f"سال {year}، {previous}"
+        assert list(view.summary.pack_slaves()) == [
+            view.year_rows[year].frame,
+            view.year_rows[previous].frame,
+        ]
+        earlier = view.year_rows[previous]
+        assert _balance_text(earlier.carry_label) == "0 روز و 0 ساعت و 0 دقیقه"
+        assert _balance_text(earlier.earned_label) == "30 روز و 0 ساعت و 0 دقیقه"
+        assert _balance_text(earlier.used_label) == "1 روز و 0 ساعت و 0 دقیقه"
+        assert _balance_text(earlier.remaining_label) == (
+            "قبل از انتقال 29 روز و 0 ساعت و 0 دقیقه\n"
+            "بعد از انتقال 20 روز و 0 ساعت و 0 دقیقه"
+        )
+        assert _balance_text(earlier.transfer_label) == "9 روز و 0 ساعت و 0 دقیقه"
+        assert view.count.cget("text") == "2 مورد"
+        shown_previous = format_shamsi_date(previous_day)
+        shown_current = format_shamsi_date(current_day)
+        values = [view.tree.item(item, "values") for item in view.tree.get_children()]
+        assert values[0][3] == shown_previous
+        assert values[1][3] == shown_current
+
+        popup.checks[year].invoke()
+        root.update()
+        assert view.checked_years == {previous}
+        assert [view.tree.item(item, "values")[3] for item in view.tree.get_children()] == [
+            shown_previous
+        ]
+        assert not view.empty.winfo_ismapped()
+        popup.checks[year].invoke()
+        root.update()
+
+        view.tree.selection_set(view.tree.get_children()[0])
+        view.edit_button.event_generate("<Button-1>")
+        root.update()
+        form = view.form
+        assert form is not None
+        form.save()
+        root.update()
+        assert view.checked_years == {year, previous}
+        assert view.count.cget("text") == "2 مورد"
+
+        view.person_combo.current(1)
+        view.person_combo.event_generate("<<ComboboxSelected>>")
+        root.update()
+        assert view.checked_years == {year}
+        assert list(view.year_popup.variables) == [year]
+        missing = view.year_rows[year]
+        assert missing.notice is not None
+        assert missing.notice.cget("text") == "تاریخ شروع همکاری ثبت نشده است."
+        assert list(missing.frame.pack_slaves())[:2] == [missing.year_label, missing.notice]
+        zero = "0 روز و 0 ساعت و 0 دقیقه"
+        assert _balance_text(missing.carry_label) == zero
+        assert _balance_text(missing.earned_label) == zero
+        assert _balance_text(missing.used_label) == zero
+        assert _balance_text(missing.remaining_label) == (
+            f"قبل از انتقال {zero}\n"
+            f"بعد از انتقال {zero}"
+        )
+        assert _balance_text(missing.transfer_label) == zero
+        assert view.empty.cget("text") == "برای این پرسنل مرخصی ثبت نشده است."
+
+        view.person_combo.current(0)
+        view.person_combo.event_generate("<<ComboboxSelected>>")
+        root.update()
+        assert view.checked_years == {year}
+        assert view.count.cget("text") == "1 مورد"
+        assert [view.tree.item(item, "values")[3] for item in view.tree.get_children()] == [
+            shown_current
+        ]
+
+        view.year_popup.checks[previous].invoke()
+        root.update()
+        assert view.checked_years == {year, previous}
+        assert view.year_popup is not None
+
+        window.nav_items["clock_events"].event_generate("<Button-1>")
+        root.update()
+        assert view.year_popup is None
+        window.nav_items["leaves"].event_generate("<Button-1>")
+        root.update()
+        assert view.checked_years == {year}
+        assert view.year_button.caption.cget("text") == f"سال {year}"
+        assert list(view.year_rows) == [year]
     finally:
         root.destroy()
 
