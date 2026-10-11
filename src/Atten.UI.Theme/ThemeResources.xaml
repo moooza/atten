@@ -15,7 +15,6 @@
     <CornerRadius x:Key="ControlCornerRadius">4</CornerRadius>
     <x:Double x:Key="FieldGap">8</x:Double>
     <x:Double x:Key="PageGap">12</x:Double>
-    <x:Double x:Key="CompactFieldWidth">72</x:Double>
     <x:Double x:Key="AmountFieldWidth">104</x:Double>
     <x:Double x:Key="FormMaxWidth">420</x:Double>
     <x:Double x:Key="ShellToolbarHeight">72</x:Double>

@@ -12,7 +12,7 @@
         Style="{StaticResource AppPanel}"
         Padding="{StaticResource FormPadding}"
         HorizontalAlignment="Stretch"
-        VerticalAlignment="Stretch">
+        VerticalAlignment="Top">
         <StackPanel>
             <TextBlock
                 x:Name="Heading"
@@ -54,7 +54,7 @@
                 Spacing="{StaticResource FieldGap}">
                 <theme:AppTextBox
                     x:Name="HoursBox"
-                    Width="{StaticResource CompactFieldWidth}"
+                    Width="{StaticResource AmountFieldWidth}"
                     TextAlignment="Center"
                     BeforeTextChanging="OnHoursChanging" />
                 <TextBlock
@@ -63,7 +63,7 @@
                     VerticalAlignment="Center" />
                 <theme:AppTextBox
                     x:Name="MinutesBox"
-                    Width="{StaticResource CompactFieldWidth}"
+                    Width="{StaticResource AmountFieldWidth}"
                     TextAlignment="Center"
                     BeforeTextChanging="OnMinutesChanging" />
                 <TextBlock

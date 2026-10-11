@@ -98,7 +98,7 @@ public sealed partial class PersonnelPage : Page
             _editor = new PersonnelForm();
             _editor.Saved += OnEditorSaved;
             _editor.Cancelled += OnEditorCancelled;
-            _editorWindow = new FormWindow(title, _editor, new SizeInt32(480, 720));
+            _editorWindow = new FormWindow(title, _editor, new SizeInt32(480, 720), fitContent: true);
             _editorWindow.Closed += OnEditorClosed;
         }
         else
