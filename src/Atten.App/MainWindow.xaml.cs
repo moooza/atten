@@ -31,6 +31,7 @@ public sealed partial class MainWindow : Window
         WindowChrome.Apply(this);
         Closed += (_, _) =>
         {
+            WindowPlacement.Save(AppWindow);
             _holidaysWindow?.Close();
             _advancedWindow?.Close();
         };
@@ -72,11 +73,11 @@ public sealed partial class MainWindow : Window
 
     private void SizeWindow()
     {
-        AppWindow.Resize(new SizeInt32(960, 560));
+        WindowPlacement.Apply(AppWindow);
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
-            presenter.PreferredMinimumWidth = 760;
-            presenter.PreferredMinimumHeight = 480;
+            presenter.PreferredMinimumWidth = WindowPlacement.MinWidth;
+            presenter.PreferredMinimumHeight = WindowPlacement.MinHeight;
         }
     }
 
