@@ -29,6 +29,8 @@ public sealed class AppPopup : Flyout
         }
     }
 
+    public double MinPresenterWidth { get; set; }
+
     private void OnOpened(object? sender, object args)
     {
         if (Content is not FrameworkElement content)
@@ -43,10 +45,27 @@ public sealed class AppPopup : Flyout
             {
                 presenter.FlowDirection = FlowDirection.RightToLeft;
                 presenter.HorizontalContentAlignment = HorizontalAlignment.Stretch;
+                FitToAnchor(presenter, content);
                 break;
             }
 
             current = VisualTreeHelper.GetParent(current);
+        }
+    }
+
+    private void FitToAnchor(FlyoutPresenter presenter, FrameworkElement content)
+    {
+        if (MinPresenterWidth <= 0)
+        {
+            return;
+        }
+
+        presenter.MinWidth = MinPresenterWidth;
+        double inner = MinPresenterWidth - presenter.Padding.Left - presenter.Padding.Right;
+        if (inner > 0)
+        {
+            content.MinWidth = inner;
+            content.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
     }
 }

@@ -51,4 +51,38 @@
     <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundChecked" Color="{StaticResource OnAccentColor}" />
     <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPointerOver" Color="{StaticResource OnAccentColor}" />
     <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundCheckedPressed" Color="{StaticResource OnAccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillIndeterminate" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillIndeterminatePointerOver" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundFillIndeterminatePressed" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeIndeterminate" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeIndeterminatePointerOver" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckBackgroundStrokeIndeterminatePressed" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundIndeterminate" Color="{StaticResource OnAccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundIndeterminatePointerOver" Color="{StaticResource OnAccentColor}" />
+    <SolidColorBrush x:Key="CheckBoxCheckGlyphForegroundIndeterminatePressed" Color="{StaticResource OnAccentColor}" />
+    <SolidColorBrush x:Key="RadioButtonBackground" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="RadioButtonBackgroundPointerOver" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="RadioButtonBackgroundPressed" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="RadioButtonBackgroundDisabled" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="RadioButtonForeground" Color="{StaticResource InkColor}" />
+    <SolidColorBrush x:Key="RadioButtonForegroundPointerOver" Color="{StaticResource InkColor}" />
+    <SolidColorBrush x:Key="RadioButtonForegroundPressed" Color="{StaticResource InkColor}" />
+    <SolidColorBrush x:Key="RadioButtonOuterEllipseStroke" Color="{StaticResource LineColor}" />
+    <SolidColorBrush x:Key="RadioButtonOuterEllipseStrokePointerOver" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="RadioButtonOuterEllipseStrokePressed" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="RadioButtonOuterEllipseFill" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="RadioButtonOuterEllipseFillPointerOver" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="RadioButtonOuterEllipseFillPressed" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedStroke" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedStrokePointerOver" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedStrokePressed" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedFill" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedFillPointerOver" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="RadioButtonOuterEllipseCheckedFillPressed" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="RadioButtonCheckGlyphFill" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="RadioButtonCheckGlyphFillPointerOver" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="RadioButtonCheckGlyphFillPressed" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="RadioButtonCheckGlyphStroke" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="RadioButtonCheckGlyphStrokePointerOver" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="RadioButtonCheckGlyphStrokePressed" Color="{StaticResource AccentColor}" />
 </ResourceDictionary>

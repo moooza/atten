@@ -13,19 +13,7 @@ public sealed class AppYearDropdown : UserControl
 {
     public const string DefaultCaption = "سال";
 
-    private readonly AppButton _button;
-    private readonly TextBlock _caption = new()
-    {
-        VerticalAlignment = VerticalAlignment.Center,
-    };
-    private readonly FontIcon _chevron = new()
-    {
-        FontFamily = new FontFamily("Segoe Fluent Icons"),
-        FontSize = 14,
-        Glyph = "\uE70D",
-        Margin = new Thickness(8, 0, 0, 0),
-    };
-    private readonly AppPopup _popup = new();
+    private readonly AppDropdownButton _dropdown = new();
     private readonly StackPanel _list = new();
     private readonly Dictionary<int, CheckBox> _checks = [];
     private readonly HashSet<int> _selected = [];
@@ -36,34 +24,19 @@ public sealed class AppYearDropdown : UserControl
     {
         FlowDirection = FlowDirection.RightToLeft;
         HorizontalAlignment = HorizontalAlignment.Right;
+        _dropdown.Caption = DefaultCaption;
+        _dropdown.Menu = _list;
+        _dropdown.Opening += (_, _) => Rebuild();
+        Content = _dropdown;
 
-        var row = new StackPanel { Orientation = Orientation.Horizontal };
-        row.Children.Add(_caption);
-        row.Children.Add(_chevron);
-
-        _popup.Content = _list;
-        _button = new AppButton
-        {
-            Kind = AppButtonKind.Secondary,
-            Content = row,
-            Flyout = _popup,
-        };
-        Content = _button;
-
-        Loaded += (_, _) =>
-        {
-            UpdateCaption();
-            Tint();
-        };
+        Loaded += (_, _) => UpdateCaption();
         ActualThemeChanged += (_, _) =>
         {
-            Tint();
             foreach (CheckBox box in _checks.Values)
             {
                 PaintCheck(box);
             }
         };
-        _popup.Opening += (_, _) => Rebuild();
     }
 
     public event EventHandler? SelectionChanged;
@@ -72,7 +45,7 @@ public sealed class AppYearDropdown : UserControl
 
     public IReadOnlySet<int> SelectedYears => _selected;
 
-    public string CaptionText => _caption.Text;
+    public string CaptionText => _dropdown.Caption;
 
     public void Bind(IEnumerable<int> years, IEnumerable<int> selected)
     {
@@ -149,7 +122,7 @@ public sealed class AppYearDropdown : UserControl
 
     private void UpdateCaption()
     {
-        _caption.Text = FormatCaption(_selected);
+        _dropdown.Caption = FormatCaption(_selected);
     }
 
     private void PaintCheck(CheckBox box)
@@ -165,23 +138,5 @@ public sealed class AppYearDropdown : UserControl
         box.Resources["CheckBoxCheckGlyphForegroundChecked"] = glyph;
         box.Resources["CheckBoxCheckGlyphForegroundCheckedPointerOver"] = glyph;
         box.Resources["CheckBoxCheckGlyphForegroundCheckedPressed"] = glyph;
-    }
-
-    private void Tint()
-    {
-        Brush ink = Theme.Brush(this, Tokens.Ink);
-        _caption.Foreground = ink;
-        _chevron.Foreground = ink;
-        if (Application.Current?.Resources.TryGetValue("AppFontFamily", out object? family) == true
-            && family is FontFamily font)
-        {
-            _caption.FontFamily = font;
-        }
-
-        if (Application.Current?.Resources.TryGetValue("BodyFontSize", out object? size) == true
-            && size is double points)
-        {
-            _caption.FontSize = points;
-        }
     }
 }

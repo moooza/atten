@@ -4,7 +4,6 @@ using Atten.Data;
 using Atten.UI.Theme;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.Graphics;
@@ -175,95 +174,25 @@ public sealed partial class LeavesPage : Page
         }
     }
 
-    private async Task<bool> ConfirmDelete(LeaveRow row)
+    private Task<bool> ConfirmDelete(LeaveRow row)
     {
         string person = PersonPicker.SelectedPerson is PersonnelRecord chosen
             ? PersonnelPicker.FormatLabel(chosen)
             : AppMessages.ChoosePersonnel;
-        string leave = AppMessages.LeaveSpan(row.StartDate, row.EndDate, row.Amount);
-        Brush accent = Theme.Brush(this, Tokens.Accent);
-        var heading = new TextBlock { Text = AppMessages.LeaveDeleteTitle };
-        ApplyTextStyle(heading, "AppTitleText");
-        AlignRight(heading);
-        var ask = new TextBlock { Text = AppMessages.LeaveDeleteAsk };
-        ApplyTextStyle(ask, "AppInkText");
-        AlignRight(ask);
-        var personLine = HighlightedLine("کارمند: ", person, accent);
-        var leaveLine = HighlightedLine("مرخصی: ", leave, accent);
-        var cancel = new AppButton
-        {
-            Content = "انصراف",
-            Kind = AppButtonKind.Primary,
-        };
-        var remove = new AppButton
-        {
-            Content = AppMessages.LeaveDelete,
-            Kind = AppButtonKind.Danger,
-        };
-        var actions = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right,
-            FlowDirection = FlowDirection.RightToLeft,
-            Spacing = 8,
-            Margin = new Thickness(0, 12, 0, 0),
-        };
-        actions.Children.Add(cancel);
-        actions.Children.Add(remove);
-
-        var body = new StackPanel
-        {
-            Spacing = 6,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            FlowDirection = FlowDirection.LeftToRight,
-        };
-        body.Children.Add(ask);
-        body.Children.Add(personLine);
-        body.Children.Add(leaveLine);
-        body.Children.Add(actions);
-
-        var dialog = new ContentDialog
-        {
-            Title = heading,
-            Content = body,
-            XamlRoot = XamlRoot,
-            FlowDirection = FlowDirection.RightToLeft,
-            RequestedTheme = ActualTheme,
-        };
-        bool confirmed = false;
-        cancel.Click += (_, _) => dialog.Hide();
-        remove.Click += (_, _) =>
-        {
-            confirmed = true;
-            dialog.Hide();
-        };
-        await dialog.ShowAsync();
-        return confirmed;
-    }
-
-    private static TextBlock HighlightedLine(string label, string value, Brush accent)
-    {
-        var block = new TextBlock { TextWrapping = TextWrapping.Wrap };
-        ApplyTextStyle(block, "AppInkText");
-        AlignRight(block);
-        block.Inlines.Add(new Run { Text = label });
-        block.Inlines.Add(new Run { Text = value, Foreground = accent });
-        return block;
-    }
-
-    private static void AlignRight(TextBlock block)
-    {
-        block.FlowDirection = FlowDirection.LeftToRight;
-        block.TextAlignment = TextAlignment.Right;
-        block.HorizontalAlignment = HorizontalAlignment.Stretch;
-    }
-
-    private static void ApplyTextStyle(TextBlock block, string key)
-    {
-        if (Application.Current.Resources.TryGetValue(key, out object? resource) && resource is Style style)
-        {
-            block.Style = style;
-        }
+        return AppConfirmDialog.ShowAsync(
+            XamlRoot,
+            ActualTheme,
+            new AppConfirmRequest
+            {
+                Title = AppMessages.LeaveDeleteTitle,
+                Ask = AppMessages.LeaveDeleteAsk,
+                Lines =
+                [
+                    new AppConfirmLine("کارمند: ", person),
+                    new AppConfirmLine("مرخصی: ", AppMessages.LeaveSpan(row.StartDate, row.EndDate, row.Amount)),
+                ],
+                ConfirmText = AppMessages.LeaveDelete,
+            });
     }
 
     private void OnEditorSaved(object? sender, EventArgs args)
