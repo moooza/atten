@@ -1,0 +1,158 @@
+<UserControl
+    x:Class="Atten.App.Leaves.LeaveLeftoverForm"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:theme="using:Atten.UI.Theme"
+    FlowDirection="LeftToRight">
+    <UserControl.KeyboardAccelerators>
+        <KeyboardAccelerator Key="Enter" Invoked="OnEnterAccelerator" />
+        <KeyboardAccelerator Key="Escape" Invoked="OnEscapeAccelerator" />
+    </UserControl.KeyboardAccelerators>
+    <Border
+        Style="{StaticResource AppPanel}"
+        Padding="{StaticResource FormPadding}"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch">
+        <StackPanel>
+            <TextBlock
+                x:Name="Heading"
+                Style="{StaticResource AppTitleText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
+            <TextBlock
+                x:Name="Hint"
+                Style="{StaticResource AppCaptionText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right"
+                TextWrapping="Wrap"
+                Margin="{StaticResource FieldHintMargin}" />
+            <TextBlock
+                x:Name="RemainingText"
+                Style="{StaticResource AppAccentText}"
+                Margin="{StaticResource FieldHintMargin}" />
+
+            <StackPanel x:Name="TransferPanel">
+                <TextBlock
+                    Text="انتقال به سال بعد"
+                    Style="{StaticResource AppFieldLabel}"
+                    HorizontalAlignment="Right"
+                    TextAlignment="Right" />
+                <StackPanel
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    FlowDirection="RightToLeft"
+                    Spacing="{StaticResource FieldGap}">
+                    <theme:AppTextBox
+                        x:Name="TransferDaysBox"
+                        Width="{StaticResource AmountFieldWidth}"
+                        TextAlignment="Center"
+                        BeforeTextChanging="OnWholeNumberChanging" />
+                    <TextBlock
+                        Text="روز"
+                        Style="{StaticResource AppListCellText}"
+                        VerticalAlignment="Center" />
+                    <theme:AppTextBox
+                        x:Name="TransferHoursBox"
+                        Width="{StaticResource AmountFieldWidth}"
+                        TextAlignment="Center"
+                        BeforeTextChanging="OnWholeNumberChanging" />
+                    <TextBlock
+                        Text="ساعت"
+                        Style="{StaticResource AppListCellText}"
+                        VerticalAlignment="Center" />
+                    <theme:AppTextBox
+                        x:Name="TransferMinutesBox"
+                        Width="{StaticResource AmountFieldWidth}"
+                        TextAlignment="Center"
+                        BeforeTextChanging="OnMinutesChanging" />
+                    <TextBlock
+                        Text="دقیقه"
+                        Style="{StaticResource AppListCellText}"
+                        VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock
+                    x:Name="TransferPreview"
+                    Style="{StaticResource AppCaptionText}"
+                    HorizontalAlignment="Right"
+                    TextAlignment="Right"
+                    TextWrapping="Wrap"
+                    Margin="{StaticResource FieldHintMargin}" />
+            </StackPanel>
+
+            <TextBlock
+                Text="تسویه"
+                Style="{StaticResource AppFieldLabel}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                FlowDirection="RightToLeft"
+                Spacing="{StaticResource FieldGap}">
+                <theme:AppTextBox
+                    x:Name="SettleDaysBox"
+                    Width="{StaticResource AmountFieldWidth}"
+                    TextAlignment="Center"
+                    BeforeTextChanging="OnWholeNumberChanging" />
+                <TextBlock
+                    Text="روز"
+                    Style="{StaticResource AppListCellText}"
+                    VerticalAlignment="Center" />
+                <theme:AppTextBox
+                    x:Name="SettleHoursBox"
+                    Width="{StaticResource AmountFieldWidth}"
+                    TextAlignment="Center"
+                    BeforeTextChanging="OnWholeNumberChanging" />
+                <TextBlock
+                    Text="ساعت"
+                    Style="{StaticResource AppListCellText}"
+                    VerticalAlignment="Center" />
+                <theme:AppTextBox
+                    x:Name="SettleMinutesBox"
+                    Width="{StaticResource AmountFieldWidth}"
+                    TextAlignment="Center"
+                    BeforeTextChanging="OnMinutesChanging" />
+                <TextBlock
+                    Text="دقیقه"
+                    Style="{StaticResource AppListCellText}"
+                    VerticalAlignment="Center" />
+            </StackPanel>
+            <TextBlock
+                x:Name="SettlePreview"
+                Style="{StaticResource AppCaptionText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right"
+                TextWrapping="Wrap"
+                Margin="{StaticResource FieldHintMargin}" />
+            <TextBlock
+                x:Name="UnallocatedText"
+                Style="{StaticResource AppCaptionText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right"
+                TextWrapping="Wrap"
+                Margin="{StaticResource FieldHintMargin}" />
+            <TextBlock
+                x:Name="ErrorText"
+                Style="{StaticResource AppDangerText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right"
+                Margin="0,4,0,0" />
+
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                FlowDirection="RightToLeft"
+                Spacing="{StaticResource FieldGap}"
+                Margin="{StaticResource FormActionsMargin}">
+                <theme:AppButton
+                    Content="ثبت"
+                    Kind="Primary"
+                    Click="OnSave" />
+                <theme:AppButton
+                    Content="انصراف"
+                    Kind="Secondary"
+                    Click="OnCancel" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

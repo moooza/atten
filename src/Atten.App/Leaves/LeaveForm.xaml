@@ -94,10 +94,22 @@
 
             <TextBlock
                 x:Name="Preview"
-                Style="{StaticResource AppInkText}"
+                Style="{StaticResource AppCaptionText}"
                 HorizontalAlignment="Right"
                 TextAlignment="Right"
-                Margin="0,8,0,0" />
+                TextWrapping="Wrap"
+                Margin="{StaticResource FieldHintMargin}" />
+
+            <TextBlock
+                Text="توضیحات (اختیاری)"
+                Style="{StaticResource AppFieldLabel}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
+            <theme:AppTextBox
+                x:Name="DescriptionBox"
+                HorizontalAlignment="Stretch"
+                FlowDirection="RightToLeft"
+                TextAlignment="Left" />
             <TextBlock
                 x:Name="ErrorText"
                 Style="{StaticResource AppDangerText}"

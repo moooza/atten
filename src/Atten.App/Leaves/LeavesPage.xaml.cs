@@ -18,6 +18,8 @@ public sealed partial class LeavesPage : Page
     private long? _yearsPersonId;
     private FormWindow? _editorWindow;
     private LeaveForm? _editor;
+    private FormWindow? _leftoverWindow;
+    private LeaveLeftoverForm? _leftover;
 
     public LeavesPage()
     {
@@ -34,7 +36,11 @@ public sealed partial class LeavesPage : Page
         };
         YearDropdown.SelectionChanged += OnYearsChanged;
         Loaded += (_, _) => Reload(keepYears: false);
-        Unloaded += (_, _) => _editorWindow?.Close();
+        Unloaded += (_, _) =>
+        {
+            _editorWindow?.Close();
+            _leftoverWindow?.Close();
+        };
     }
 
     private void OnAdd(object sender, RoutedEventArgs args)
@@ -63,11 +69,15 @@ public sealed partial class LeavesPage : Page
         LeavesList.SelectedItem = row;
         Notice.Text = string.Empty;
         var menu = new AppMenuFlyout();
-        var edit = new AppMenuItem { Text = "ویرایش" };
-        edit.Click += (_, _) => OpenForm(row.Record.PersonnelId, row.Record);
+        if (!row.IsSettlement)
+        {
+            var edit = new AppMenuItem { Text = "ویرایش" };
+            edit.Click += (_, _) => OpenForm(row.Record.PersonnelId, row.Record);
+            menu.Items.Add(edit);
+        }
+
         var remove = new AppMenuItem { Text = AppMessages.LeaveDelete };
         remove.Click += async (_, _) => await DeleteLeave(row);
-        menu.Items.Add(edit);
         menu.Items.Add(remove);
         if (args.OriginalSource is FrameworkElement target)
         {
@@ -99,12 +109,55 @@ public sealed partial class LeavesPage : Page
             return;
         }
 
+        if (row.IsSettlement)
+        {
+            Notice.Text = AppMessages.LeaveSettlementNoEdit;
+            return;
+        }
+
         Notice.Text = string.Empty;
         OpenForm(row.Record.PersonnelId, row.Record);
     }
 
+    private void OnLeftover(object sender, RoutedEventArgs args)
+    {
+        if (sender is not FrameworkElement { DataContext: LeaveYearCard card })
+        {
+            return;
+        }
+
+        if (_store is null || PersonPicker.SelectedPersonnelId is not long personId)
+        {
+            Notice.Text = AppMessages.LeaveListFailed;
+            return;
+        }
+
+        string title = AppMessages.LeaveLeftoverTitle(card.Year);
+        if (_leftoverWindow is null || _leftover is null)
+        {
+            _leftover = new LeaveLeftoverForm();
+            _leftover.Saved += OnLeftoverSaved;
+            _leftover.Cancelled += OnLeftoverCancelled;
+            _leftoverWindow = new FormWindow(title, _leftover, new SizeInt32(580, 640));
+            _leftoverWindow.Closed += OnLeftoverClosed;
+        }
+        else
+        {
+            _leftoverWindow.Title = title;
+        }
+
+        _leftover.Bind(_store, card, personId);
+        _leftoverWindow.BringForward();
+    }
+
     private void OpenForm(long? personnelId, LeaveRecord? leave)
     {
+        if (leave is not null && leave.Kind == Leave.KindSettlement)
+        {
+            Notice.Text = AppMessages.LeaveSettlementNoEdit;
+            return;
+        }
+
         if (_store is null || _people is null)
         {
             Notice.Text = AppMessages.LeaveListFailed;
@@ -117,7 +170,7 @@ public sealed partial class LeavesPage : Page
             _editor = new LeaveForm();
             _editor.Saved += OnEditorSaved;
             _editor.Cancelled += OnEditorCancelled;
-            _editorWindow = new FormWindow(title, _editor, new SizeInt32(580, 640));
+            _editorWindow = new FormWindow(title, _editor, new SizeInt32(580, 700));
             _editorWindow.Closed += OnEditorClosed;
         }
         else
@@ -189,10 +242,33 @@ public sealed partial class LeavesPage : Page
                 Lines =
                 [
                     new AppConfirmLine("کارمند: ", person),
-                    new AppConfirmLine("مرخصی: ", AppMessages.LeaveSpan(row.StartDate, row.EndDate, row.Amount)),
+                    new AppConfirmLine($"{row.Kind}: ", AppMessages.LeaveSpan(row.StartDate, row.EndDate, row.Amount)),
                 ],
                 ConfirmText = AppMessages.LeaveDelete,
             });
+    }
+
+    private void OnLeftoverSaved(object? sender, EventArgs args)
+    {
+        _leftoverWindow?.Close();
+        Reload(keepYears: true);
+    }
+
+    private void OnLeftoverCancelled(object? sender, EventArgs args)
+    {
+        _leftoverWindow?.Close();
+    }
+
+    private void OnLeftoverClosed(object sender, WindowEventArgs args)
+    {
+        if (_leftover is not null)
+        {
+            _leftover.Saved -= OnLeftoverSaved;
+            _leftover.Cancelled -= OnLeftoverCancelled;
+        }
+
+        _leftoverWindow = null;
+        _leftover = null;
     }
 
     private void OnEditorSaved(object? sender, EventArgs args)
@@ -260,7 +336,7 @@ public sealed partial class LeavesPage : Page
 
         try
         {
-            ShowRows(person, _store.List(person.Id));
+            ShowRows(person, _store, _store.List(person.Id));
         }
         catch (Exception ex)
         {
@@ -270,7 +346,7 @@ public sealed partial class LeavesPage : Page
         }
     }
 
-    private void ShowRows(PersonnelRecord person, IReadOnlyList<LeaveRecord> rows)
+    private void ShowRows(PersonnelRecord person, ILeaveRepository store, IReadOnlyList<LeaveRecord> rows)
     {
         DateOnly? started = Leave.OptionalDate(person.CooperationStart);
         DateOnly? ended = Leave.OptionalDate(person.CooperationEnd);
@@ -281,13 +357,16 @@ public sealed partial class LeavesPage : Page
             usedByYear[year] = usedByYear.GetValueOrDefault(year) + row.Minutes;
         }
 
+        IReadOnlyDictionary<int, int> carryCaps = store.CarryMinutesByYear(person.Id);
         IReadOnlyDictionary<int, LeaveYearSettlement> settled = Leave.SettleCooperationYears(
             started,
             ended,
-            usedByYear);
+            usedByYear,
+            carryCaps: carryCaps);
+        int? closingYear = ended is null ? null : Leave.ShamsiYearOf(ended.Value);
         var cards = _checkedYears
             .OrderByDescending(year => year)
-            .Select(year => new LeaveYearCard(Leave.YearBalance(year, started, settled, usedByYear)))
+            .Select(year => new LeaveYearCard(Leave.YearBalance(year, started, settled, usedByYear), closingYear))
             .ToList();
         YearCards.ItemsSource = cards;
 

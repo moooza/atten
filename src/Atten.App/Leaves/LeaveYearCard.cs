@@ -5,7 +5,7 @@ namespace Atten.App.Leaves;
 
 public sealed class LeaveYearCard
 {
-    public LeaveYearCard(LeaveYearBalance balance)
+    public LeaveYearCard(LeaveYearBalance balance, int? closingYear)
     {
         Year = balance.Year;
         Title = $"سال {balance.Year}";
@@ -14,8 +14,18 @@ public sealed class LeaveYearCard
         Carry = Leave.FormatLeaveAmount(balance.Carry);
         Earned = Leave.FormatLeaveAmount(balance.Earned);
         Used = Leave.FormatLeaveAmount(balance.Used);
-        Remaining = AppMessages.LeaveRemaining(balance.RemainingBeforeTransfer, balance.RemainingAfterTransfer);
+        RemainingMinutes = balance.RemainingBeforeTransfer;
+        ClosingYear = closingYear;
+        Remaining = Leave.FormatSignedLeaveAmount(balance.RemainingBeforeTransfer);
+        RemainingOkVisibility = balance.RemainingBeforeTransfer < 0 ? Visibility.Collapsed : Visibility.Visible;
+        RemainingDangerVisibility = balance.RemainingBeforeTransfer < 0 ? Visibility.Visible : Visibility.Collapsed;
         Transfer = Leave.FormatLeaveAmount(balance.Transfer);
+        Leftover = Leave.FormatLeaveAmount(balance.RemainingAfterTransfer);
+        TransferLine = $"انتقال به سال بعد: {Transfer}";
+        LeftoverLine = $"مانده بعد از انتقال: {Leftover}";
+        bool canSettle = Leave.CanSettleLeftover(balance.Year, balance.RemainingBeforeTransfer, closingYear);
+        CanTransfer = Leave.CanCarryLeftover(balance.Year, balance.RemainingBeforeTransfer, closingYear);
+        ActionsVisibility = canSettle || CanTransfer ? Visibility.Visible : Visibility.Collapsed;
     }
 
     public int Year { get; }
@@ -32,7 +42,25 @@ public sealed class LeaveYearCard
 
     public string Used { get; }
 
+    public int RemainingMinutes { get; }
+
+    public int? ClosingYear { get; }
+
+    public bool CanTransfer { get; }
+
     public string Remaining { get; }
 
+    public Visibility RemainingOkVisibility { get; }
+
+    public Visibility RemainingDangerVisibility { get; }
+
     public string Transfer { get; }
+
+    public string Leftover { get; }
+
+    public string TransferLine { get; }
+
+    public string LeftoverLine { get; }
+
+    public Visibility ActionsVisibility { get; }
 }

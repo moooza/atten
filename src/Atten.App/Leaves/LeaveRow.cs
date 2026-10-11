@@ -12,6 +12,8 @@ public sealed class LeaveRow
     {
         Record = record;
         IdText = record.Id.ToString(Invariant);
+        IsSettlement = record.Kind == Leave.KindSettlement;
+        Kind = IsSettlement ? AppMessages.LeaveKindSettlement : AppMessages.LeaveKindLeave;
         StartDate = Dates.FormatShamsiDate(record.StartDate);
         EndDate = Dates.FormatShamsiDate(record.EndDate);
         Amount = Leave.FormatLeaveAmount(record.Minutes);
@@ -21,6 +23,10 @@ public sealed class LeaveRow
     public LeaveRecord Record { get; }
 
     public string IdText { get; }
+
+    public bool IsSettlement { get; }
+
+    public string Kind { get; }
 
     public string StartDate { get; }
 

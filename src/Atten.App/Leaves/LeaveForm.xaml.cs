@@ -52,10 +52,12 @@ public sealed partial class LeaveForm : UserControl
         if (leave is not null)
         {
             ApplyAmount(leave.StartDate, leave.EndDate, leave.Minutes);
+            DescriptionBox.Text = leave.Description ?? string.Empty;
         }
         else if (startDate is not null)
         {
             ApplyAmount(Dates.StorageDate(startDate.Value), Dates.StorageDate(endDate ?? startDate.Value), minutes);
+            DescriptionBox.Text = string.Empty;
         }
         else
         {
@@ -66,6 +68,7 @@ public sealed partial class LeaveForm : UserControl
             DaysBox.Text = string.Empty;
             HoursBox.Text = string.Empty;
             MinutesBox.Text = string.Empty;
+            DescriptionBox.Text = string.Empty;
         }
 
         UpdateRemaining();
@@ -145,13 +148,14 @@ public sealed partial class LeaveForm : UserControl
             }
 
             int amount = Leave.ComposeLeaveMinutes(days, hours, minutes);
+            string? description = DescriptionBox.Text;
             if (_leaveId is null)
             {
-                _store.Add(personId, start, end, amount);
+                _store.Add(personId, start, end, amount, description);
             }
             else
             {
-                _store.Update(_leaveId.Value, personId, start, end, amount);
+                _store.Update(_leaveId.Value, personId, start, end, amount, description);
             }
 
             Saved?.Invoke(this, EventArgs.Empty);
@@ -177,7 +181,7 @@ public sealed partial class LeaveForm : UserControl
             return;
         }
 
-        DaysBox.Text = Leave.CalendarDaySpan(start, end)?.ToString(Invariant) ?? string.Empty;
+        DaysBox.Text = Leave.WorkingDayCount(start, end, IsOfficialHoliday)?.ToString(Invariant) ?? string.Empty;
     }
 
     private void UpdateRemaining()
@@ -229,6 +233,11 @@ public sealed partial class LeaveForm : UserControl
         {
             Preview.Text = string.Empty;
         }
+    }
+
+    private static bool IsOfficialHoliday(DateOnly day)
+    {
+        return OfficialHoliday.IsHoliday(day, ShamsiCalendar.SharedOfficialDates);
     }
 
     private static DateOnly RequiredDate(ShamsiDateField field)

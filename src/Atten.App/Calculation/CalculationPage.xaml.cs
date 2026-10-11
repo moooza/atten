@@ -191,7 +191,7 @@ public sealed partial class CalculationPage : Page
             _editor = new LeaveForm();
             _editor.Saved += OnEditorSaved;
             _editor.Cancelled += OnEditorCancelled;
-            _editorWindow = new FormWindow(AppMessages.LeaveAdd, _editor, new SizeInt32(580, 640));
+            _editorWindow = new FormWindow(AppMessages.LeaveAdd, _editor, new SizeInt32(580, 700));
             _editorWindow.Closed += OnEditorClosed;
         }
         else

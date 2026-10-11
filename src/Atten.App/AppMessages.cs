@@ -127,12 +127,22 @@ public static class AppMessages
 
     public const string LeaveInvalidNumber = "روز، ساعت و دقیقه را با عدد وارد کنید.";
 
-    public const string LeaveBeforeTransfer = "قبل از انتقال";
-
-    public const string LeaveAfterTransfer = "بعد از انتقال";
-
     public const string LeaveHint =
-        "هر روز مرخصی ۷ ساعت و ۲۰ دقیقه است. هر ماه ۲٫۵ روز، انتقال حداکثر ۹ روز.";
+        "هر روز مرخصی ۷ ساعت و ۲۰ دقیقه است. هر ماه ۲٫۵ روز. جمعه و تعطیل رسمی شمرده نمی‌شود. " +
+        "پیش‌فرض انتقال ۹ روز است؛ مانده را می‌توان تسویه یا اضافه به سال بعد منتقل کرد.";
+
+    public const string LeaveLeftoverHint =
+        "میزان انتقال و تسویه را جدا وارد کنید. جمع آن‌ها از مانده بیشتر نشود. " +
+        "می‌توان بیشتر از ۹ روز منتقل کرد، یا بخشی را تسویه و بخشی را منتقل کرد. " +
+        "سال قطع همکاری منتقل نمی‌شود و می‌توان کل مانده را تسویه کرد.";
+
+    public const string LeaveLeftoverFailed = "ثبت مانده ممکن نشد";
+
+    public const string LeaveKindLeave = "مرخصی";
+
+    public const string LeaveKindSettlement = "تسویه";
+
+    public const string LeaveSettlementNoEdit = "تسویه را نمی‌توان ویرایش کرد.";
 
     public const string CalculationChooseRange = "کارمند و بازه تاریخ را انتخاب کنید.";
 
@@ -307,9 +317,19 @@ public static class AppMessages
         return $"مانده مرخصی سال {year}: {Leave.FormatSignedLeaveAmount(minutes)}";
     }
 
-    public static string LeaveRemaining(int beforeTransfer, int afterTransfer)
+    public static string LeaveLeftoverTitle(int year)
     {
-        return $"{LeaveBeforeTransfer} {Leave.FormatSignedLeaveAmount(beforeTransfer)}\n{LeaveAfterTransfer} {Leave.FormatSignedLeaveAmount(afterTransfer)}";
+        return $"مانده سال {year}";
+    }
+
+    public static string LeaveLeftoverRemaining(int minutes)
+    {
+        return $"مانده کل: {Leave.FormatSignedLeaveAmount(minutes)}";
+    }
+
+    public static string LeaveLeftoverUnallocated(int minutes)
+    {
+        return $"باقی‌مانده تخصیص‌نداده: {Leave.FormatSignedLeaveAmount(minutes)}";
     }
 
     public static string ClockImportNotice(int added, int skipped)
