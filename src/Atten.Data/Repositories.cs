@@ -3,7 +3,7 @@ using Atten.Core;
 namespace Atten.Data;
 
 /// <summary>
-/// Personnel, leave, clock, calculation, and payroll access behind interfaces.
+/// Personnel, leave, clock, calculation, payroll, and official holiday access behind interfaces.
 /// The portable file path and the SQLite connection stay inside Data.
 /// </summary>
 public interface IAttenRepository
@@ -17,6 +17,8 @@ public interface IAttenRepository
     ICalculationRepository Calculation { get; }
 
     IPayrollRepository Payroll { get; }
+
+    IOfficialHolidayRepository OfficialHolidays { get; }
 
     IUserRepository Users { get; }
 
@@ -123,6 +125,23 @@ public interface IPayrollRepository
     PayrollRunRecord? Get(long payrollId);
 
     IReadOnlyList<PayrollRunRecord> List(long? personnelId = null);
+}
+
+public interface IOfficialHolidayRepository
+{
+    long Add(DateOnly date, string title);
+
+    void AddMany(IReadOnlyList<DateOnly> dates, string title);
+
+    void Update(long holidayId, DateOnly date, string title);
+
+    void Delete(long holidayId);
+
+    void DeleteMany(IReadOnlyList<long> holidayIds);
+
+    IReadOnlyList<OfficialHolidayRecord> List();
+
+    IReadOnlyList<OfficialHolidayRecord> List(DateOnly startDate, DateOnly endDate);
 }
 
 public interface IUserRepository
@@ -245,3 +264,12 @@ public sealed record PayrollRunRecord(
     long UpdatedBy);
 
 public sealed record UserRecord(long Id, string DisplayName, string CreatedAt);
+
+public sealed record OfficialHolidayRecord(
+    long Id,
+    string Date,
+    string Title,
+    string CreatedAt,
+    string UpdatedAt,
+    long CreatedBy,
+    long UpdatedBy);

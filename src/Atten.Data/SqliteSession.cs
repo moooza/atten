@@ -99,6 +99,13 @@ internal static class RepositoryGuard
     public const string ChoosePayroll = "یک حقوق را انتخاب کنید.";
     public const string PayrollSave = "ثبت حقوق ممکن نشد.";
     public const string PayrollConfirmed = "برای این پرسنل در این بازه قبلاً حقوق تأیید شده است.";
+    public const string HolidayTitle = "عنوان تعطیل را وارد کنید.";
+    public const string MissingHoliday = "این تعطیل رسمی دیگر وجود ندارد.";
+    public const string ChooseHoliday = "یک تعطیل رسمی را انتخاب کنید.";
+    public const string HolidaySave = "ثبت تعطیل رسمی ممکن نشد.";
+    public const string HolidayDelete = "حذف تعطیل رسمی ممکن نشد.";
+    public const string HolidayDuplicate = "این تاریخ قبلاً به‌عنوان تعطیل رسمی ثبت شده است.";
+    public const string HolidayDates = "حداقل یک تاریخ را انتخاب کنید.";
 
     public static long PersonId(long value)
     {
@@ -271,6 +278,32 @@ internal static class RepositoryGuard
         }
 
         return new ArgumentException(PayrollSave, ex);
+    }
+
+    public static long HolidayId(long value)
+    {
+        if (value <= 0)
+        {
+            throw new ArgumentException(ChooseHoliday);
+        }
+
+        return value;
+    }
+
+    public static Exception HolidaySaveError(SqliteException ex)
+    {
+        string message = ex.Message.ToLowerInvariant();
+        if (message.Contains("unique", StringComparison.Ordinal))
+        {
+            return new ArgumentException(HolidayDuplicate, ex);
+        }
+
+        return new ArgumentException(HolidaySave, ex);
+    }
+
+    public static Exception HolidayDeleteError(SqliteException ex)
+    {
+        return new ArgumentException(HolidayDelete, ex);
     }
 
     public static void RequirePersonnel(SqliteConnection connection, SqliteTransaction? transaction, long personId)

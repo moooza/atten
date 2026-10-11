@@ -1,3 +1,4 @@
+using Atten.Core;
 using Atten.Data;
 using Atten.UI.Theme;
 using Microsoft.UI.Xaml;
@@ -24,6 +25,19 @@ public partial class App : Application
     public void ReloadStore()
     {
         Store = AttenStore.Open();
+        ApplyOfficialHolidayCatalog();
+    }
+
+    /// <summary>
+    /// Hands the official-holiday catalog to every Shamsi picker.
+    /// Theme paints those days; it does not query Data.
+    /// </summary>
+    public void ApplyOfficialHolidayCatalog()
+    {
+        IReadOnlyList<OfficialHolidayRecord> rows = Store is null
+            ? []
+            : Store.OfficialHolidays.List();
+        ShamsiCalendar.SharedOfficialDates = OfficialHoliday.Catalog(rows.Select(row => row.Date));
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
@@ -32,10 +46,12 @@ public partial class App : Application
         try
         {
             Store = AttenStore.Start(out notice);
+            ApplyOfficialHolidayCatalog();
         }
         catch (Exception)
         {
             notice = AppMessages.StartupFailed;
+            ShamsiCalendar.SharedOfficialDates = OfficialHoliday.Catalog(Array.Empty<string>());
         }
 
         _window = new MainWindow(notice);

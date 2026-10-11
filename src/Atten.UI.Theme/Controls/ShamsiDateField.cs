@@ -96,6 +96,16 @@ public sealed class ShamsiDateField : UserControl
 
     public event EventHandler? DateChanged;
 
+    /// <summary>
+    /// Official holiday dates (Gregorian YYYY-MM-DD) painted red in the popup.
+    /// Defaults to <see cref="ShamsiCalendar.SharedOfficialDates"/>.
+    /// </summary>
+    public IReadOnlySet<string> OfficialDates
+    {
+        get => _calendar.OfficialDates;
+        set => _calendar.OfficialDates = value;
+    }
+
     /// <summary>Gregorian storage text YYYY-MM-DD, or null when empty/invalid.</summary>
     public string? StorageDate
     {

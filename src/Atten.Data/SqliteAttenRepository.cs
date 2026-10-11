@@ -10,6 +10,7 @@ internal sealed class SqliteAttenRepository : IAttenRepository
         ClockEvents = new SqliteClockEventRepository(session);
         Calculation = new SqliteCalculationRepository(session);
         Payroll = new SqlitePayrollRepository(session);
+        OfficialHolidays = new SqliteOfficialHolidayRepository(session);
         Users = new SqliteUserRepository(session);
         Backup = new SqliteBackupService(dbFile);
     }
@@ -23,6 +24,8 @@ internal sealed class SqliteAttenRepository : IAttenRepository
     public ICalculationRepository Calculation { get; }
 
     public IPayrollRepository Payroll { get; }
+
+    public IOfficialHolidayRepository OfficialHolidays { get; }
 
     public IUserRepository Users { get; }
 

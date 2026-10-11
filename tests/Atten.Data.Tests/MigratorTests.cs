@@ -7,7 +7,7 @@ public class MigratorTests
 {
     private static readonly string[] AllVersions =
     [
-        "001", "002", "003", "004", "005", "006", "007", "008", "009", "010", "011", "012", "013",
+        "001", "002", "003", "004", "005", "006", "007", "008", "009", "010", "011", "012", "013", "014",
     ];
 
     [Fact]
@@ -116,6 +116,17 @@ public class MigratorTests
                     "updated_by",
                 ],
                 Columns(connection, "payroll_runs"));
+            Assert.Equal(
+                [
+                    "id",
+                    "date",
+                    "title",
+                    "created_at",
+                    "updated_at",
+                    "created_by",
+                    "updated_by",
+                ],
+                Columns(connection, "official_holidays"));
         });
     }
 
@@ -134,11 +145,12 @@ public class MigratorTests
                 VALUES ('dev-1', 'علی', 'رضایی', 8, '2026-10-07T16:30:00', '2026-10-07T16:30:00')
                 """;
             insert.ExecuteNonQuery();
+            Revert014(connection);
             Revert013(connection);
             Revert012(connection);
         });
 
-        Assert.Equal(["012", "013"], Migrator.Apply(db.DbFile));
+        Assert.Equal(["012", "013", "014"], Migrator.Apply(db.DbFile));
 
         SqliteDatabase.Use(db.DbFile, connection =>
         {
@@ -166,11 +178,12 @@ public class MigratorTests
         Migrator.Apply(db.DbFile);
         SqliteDatabase.Use(db.DbFile, connection =>
         {
+            Revert014(connection);
             Revert013(connection);
             Revert012(connection);
         });
 
-        Assert.Equal(["012", "013"], Migrator.Apply(db.DbFile));
+        Assert.Equal(["012", "013", "014"], Migrator.Apply(db.DbFile));
         Assert.Empty(Migrator.Apply(db.DbFile));
     }
 
@@ -190,6 +203,7 @@ public class MigratorTests
             });
         Assert.Contains(embedded, item => item.Version == "012" && item.FileName == "012_users.sql");
         Assert.Contains(embedded, item => item.Version == "013" && item.FileName == "013_payroll.sql");
+        Assert.Contains(embedded, item => item.Version == "014" && item.FileName == "014_official_holidays.sql");
     }
 
     [Fact]
@@ -207,6 +221,12 @@ public class MigratorTests
             Assert.Equal(TimeSpan.Zero, parsed.Offset);
             Assert.True((DateTimeOffset.UtcNow - parsed).Duration() < TimeSpan.FromMinutes(1));
         });
+    }
+
+    private static void Revert014(SqliteConnection connection)
+    {
+        connection.Execute("DELETE FROM schema_migrations WHERE version = '014'");
+        connection.Execute("DROP TABLE IF EXISTS official_holidays");
     }
 
     private static void Revert013(SqliteConnection connection)

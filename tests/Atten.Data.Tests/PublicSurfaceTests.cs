@@ -40,6 +40,7 @@ public class PublicSurfaceTests
         Assert.IsAssignableFrom<IClockEventRepository>(store.ClockEvents);
         Assert.IsAssignableFrom<ICalculationRepository>(store.Calculation);
         Assert.IsAssignableFrom<IPayrollRepository>(store.Payroll);
+        Assert.IsAssignableFrom<IOfficialHolidayRepository>(store.OfficialHolidays);
         Assert.IsAssignableFrom<IUserRepository>(store.Users);
         Assert.IsAssignableFrom<IBackupService>(store.Backup);
         Assert.IsAssignableFrom<IAttenRepository>(store);

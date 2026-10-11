@@ -72,6 +72,21 @@ public class DatesTests
     }
 
     [Fact]
+    public void InclusiveDaysKeepsStartAndEndAndRejectsAReversedRange()
+    {
+        DateOnly start = Dates.ParseShamsiDate("1405/01/19");
+        DateOnly end = Dates.ParseShamsiDate("1405/01/21");
+        Assert.Equal(
+            [start, start.AddDays(1), end],
+            Dates.InclusiveDays(start, end));
+        Assert.Equal([start], Dates.InclusiveDays(start, start));
+
+        ArgumentException reversed = Assert.Throws<ArgumentException>(
+            () => Dates.InclusiveDays(end, start));
+        Assert.Equal("تاریخ پایان باید بعد از تاریخ شروع یا برابر با آن باشد.", reversed.Message);
+    }
+
+    [Fact]
     public void InvalidShamsiDatesAreRejected()
     {
         var invalidDate = Assert.Throws<FormatException>(() => Dates.ParseShamsiDate("1404/12/30"));

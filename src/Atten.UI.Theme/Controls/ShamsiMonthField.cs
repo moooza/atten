@@ -102,6 +102,16 @@ public sealed class ShamsiMonthField : UserControl
 
     public event EventHandler? MonthChanged;
 
+    /// <summary>
+    /// Official holiday dates (Gregorian YYYY-MM-DD) painted red in the popup.
+    /// Defaults to <see cref="ShamsiCalendar.SharedOfficialDates"/>.
+    /// </summary>
+    public IReadOnlySet<string> OfficialDates
+    {
+        get => _calendar.OfficialDates;
+        set => _calendar.OfficialDates = value;
+    }
+
     public int? Year => _year;
 
     public int? Month => _month;

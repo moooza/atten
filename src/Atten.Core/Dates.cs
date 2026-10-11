@@ -39,6 +39,7 @@ public static class Dates
 
     private const string InvalidDate = "تاریخ شمسی معتبر نیست.";
     private const string InvalidTime = "ساعت معتبر نیست.";
+    private const string InvalidRange = "تاریخ پایان باید بعد از تاریخ شروع یا برابر با آن باشد.";
     private static readonly int[] GregorianMonthDays = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
     private static readonly int[] JalaliMonthDays = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
@@ -86,6 +87,25 @@ public static class Dates
     {
         var (year, month, day) = ShamsiParts(text);
         return JalaliToDate(year, month, day);
+    }
+
+    /// <summary>
+    /// Every civil day from start through end, both inclusive. 19 to 21 is three days.
+    /// </summary>
+    public static IReadOnlyList<DateOnly> InclusiveDays(DateOnly start, DateOnly end)
+    {
+        if (end < start)
+        {
+            throw new ArgumentException(InvalidRange);
+        }
+
+        var days = new List<DateOnly>(end.DayNumber - start.DayNumber + 1);
+        for (DateOnly day = start; day <= end; day = day.AddDays(1))
+        {
+            days.Add(day);
+        }
+
+        return days;
     }
 
     /// <summary>

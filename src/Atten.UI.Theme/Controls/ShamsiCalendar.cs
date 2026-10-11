@@ -20,11 +20,15 @@ public sealed class ShamsiCalendar : UserControl
     }
 
     private const int YearSpan = 12;
+    private const int FridayWeekday = 6;
+
+    private static IReadOnlySet<string> _sharedOfficialDates = EmptyOfficialDates();
 
     private int _year;
     private int _month;
     private DateOnly _selected;
     private ViewMode _view = ViewMode.Days;
+    private IReadOnlySet<string>? _officialDates;
     private readonly TextBlock _titleLabel;
     private readonly FontIcon _titleChevron;
     private readonly Button _titleButton;
@@ -113,6 +117,38 @@ public sealed class ShamsiCalendar : UserControl
     public event EventHandler<DateOnly>? DatePicked;
 
     public event EventHandler<(int Year, int Month)>? MonthPicked;
+
+    /// <summary>
+    /// Official holiday dates (Gregorian YYYY-MM-DD) for every picker.
+    /// App sets this after the store opens. Theme does not query Data.
+    /// </summary>
+    public static IReadOnlySet<string> SharedOfficialDates
+    {
+        get => _sharedOfficialDates;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            _sharedOfficialDates = value;
+        }
+    }
+
+    /// <summary>
+    /// Official dates this calendar paints with Danger. Defaults to
+    /// <see cref="SharedOfficialDates"/> so every picker sees the same catalog.
+    /// </summary>
+    public IReadOnlySet<string> OfficialDates
+    {
+        get => _officialDates ?? SharedOfficialDates;
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            _officialDates = value;
+            if (IsLoaded)
+            {
+                Render();
+            }
+        }
+    }
 
     /// <summary>Month grid only. A month click picks the month instead of opening days.</summary>
     public bool PickMonth { get; set; }
@@ -266,7 +302,8 @@ public sealed class ShamsiCalendar : UserControl
                 chosen: day == _selected,
                 tag: day,
                 minHeight: 32,
-                OnDayClick);
+                OnDayClick,
+                holiday: IsHolidayMark(day));
             Grid.SetColumn(cell, (offset + index) % 7);
             Grid.SetRow(cell, 1 + (offset + index) / 7);
             _cells.Children.Add(cell);
@@ -328,13 +365,21 @@ public sealed class ShamsiCalendar : UserControl
         Grid.SetRow(element, index / columns);
     }
 
-    private Button Cell(string text, bool chosen, object tag, int minHeight, RoutedEventHandler click)
+    private bool IsHolidayMark(DateOnly day)
+    {
+        return Dates.ShamsiWeekIndex(day) == FridayWeekday
+            || OfficialDates.Contains(Dates.StorageDate(day));
+    }
+
+    private Button Cell(string text, bool chosen, object tag, int minHeight, RoutedEventHandler click, bool holiday = false)
     {
         var cell = new Button
         {
             Content = text,
             Background = chosen ? Theme.Brush(this, Tokens.Accent) : Theme.Brush(this, Tokens.Surface),
-            Foreground = chosen ? Theme.Brush(this, Tokens.OnAccent) : Theme.Brush(this, Tokens.Ink),
+            Foreground = chosen
+                ? Theme.Brush(this, Tokens.OnAccent)
+                : Theme.Brush(this, holiday ? Tokens.Danger : Tokens.Ink),
             BorderThickness = new Thickness(0),
             Padding = new Thickness(4, 0, 4, 0),
             MinWidth = 32,
@@ -349,6 +394,11 @@ public sealed class ShamsiCalendar : UserControl
         ApplyFont(cell, "AppFontFamily");
         cell.Click += click;
         return cell;
+    }
+
+    private static IReadOnlySet<string> EmptyOfficialDates()
+    {
+        return new HashSet<string>(StringComparer.Ordinal);
     }
 
     private static (int Start, int End) YearPage(int year)

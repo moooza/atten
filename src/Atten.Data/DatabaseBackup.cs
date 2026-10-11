@@ -41,6 +41,7 @@ public static class DatabaseBackup
             ["calculation_days"] = "روزهای محاسبه",
             ["calculation_punches"] = "ساعت‌های محاسبه",
             ["payroll_runs"] = "حقوق",
+            ["official_holidays"] = "تعطیلات رسمی",
         };
 
     private static readonly string[] TableOrder = [.. TableLabels.Keys];
