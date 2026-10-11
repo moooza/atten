@@ -1,0 +1,68 @@
+---
+description: >-
+  Portable zip layout, file names, and the publish checklist. Use only when
+  building a release zip. Do not apply during implementation, review, or planning.
+alwaysApply: false
+---
+
+# Package
+
+The unzipped folder must stay simple. The operator sees `atten.exe`. After the first run, `data` and `backups` appear beside it. Every DLL and locale folder lives in `app`.
+
+## Version and names
+
+Read `AppInfo.Version` and `Atten.App.csproj` `<Version>`. They must be the same string, for example `2.1`. Do not invent a different number for the zip or the tag.
+
+| What | Name |
+| --- | --- |
+| Zip file | `atten-<version>-windows-x64.zip` |
+| Folder inside the zip | `atten/` |
+| Root exe | `atten.exe` (the net48 launcher, a few KB) |
+| Real app | `atten/app/Atten.App.exe` |
+| Git tag | `v<version>` |
+| GitHub release title | `Atten <version>` |
+| GitHub asset | the same zip file name |
+
+Examples for `2.1`: `atten-2.1-windows-x64.zip`, tag `v2.1`, title `Atten 2.1`.
+
+Lowercase `atten`, hyphen before the version, no `v` in the zip name, no spaces, always `windows-x64`.
+
+Write the zip to `dist/` (gitignored). Do not commit `dist/`, `*.zip`, `bin/`, or `obj/`.
+
+## How to build
+
+Never zip a `bin/.../Release` **build** tree. That copies `win-x64/` again and adds `runtimes/win-arm64`.
+
+```powershell
+dotnet publish src/Atten.App/Atten.App.csproj -c Release -r win-x64 -p:Platform=x64 --self-contained true
+dotnet build src/Atten.Launcher/Atten.Launcher.csproj -c Release
+```
+
+Publish folder: `src/Atten.App/bin/x64/Release/net8.0-windows10.0.19041.0/win-x64/publish/`
+
+1. Copy the publish folder into `atten/app/`.
+2. Copy `src/Atten.Launcher/bin/Release/net48/atten.exe` to `atten/atten.exe`.
+3. Delete `*.pdb` and `createdump.exe` from `atten/app/`.
+4. Zip the `atten` folder (so the archive root is `atten/`, not loose files).
+
+Do not publish the launcher as self-contained. Do not put `Atten.App.exe` at the zip root.
+
+## Must not be in the zip
+
+- `runtimes/`, a nested `win-x64/`, `win-arm64`, `win-x86`
+- `*.pdb`, `createdump.exe`
+- `data/`, `backups/`, `atten.db`, WAL files
+- A second copy of `atten.exe` inside `app/`
+- Source, tests, `.cursor`, or the repo `data/` folder
+
+## Check before you call it done
+
+List the archive (`tar -tf` the zip) and confirm all of these:
+
+- Top level is only `atten/atten.exe` and `atten/app/`
+- `atten/app/Atten.App.exe` exists
+- No `runtimes/`, no nested `win-x64/`, no `.pdb`, no `createdump`, no `data/`
+- `atten.exe` at the root is about 10 KB, not tens of megabytes
+- Zip size is about the same as the last release (~90 MB). Near 180 MB means extra architectures slipped in
+
+`data` and `backups` are created at runtime beside `atten.exe`. `AppPaths` treats an exe inside `app` as published at the parent folder. Automatic snapshots sit beside `data`, not inside it.

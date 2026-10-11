@@ -13,6 +13,7 @@ One desktop product. Swap the UI or the database engine without rewriting domain
 - `Atten.Data` — repository, migrations, connection, backup. No windows, colors, or controls.
 - `Atten.UI.Theme` — tokens and `App*` controls. No business rules, SQL, or Data. May reference `Atten.Core` only for dates (format, parse, month days).
 - `Atten.App` — feature screens and `Shared` pickers. Calls services only. No SQL, `PRAGMA`, or `atten.db` paths.
+- `Atten.Launcher` — tiny portable stub that starts `app\Atten.App.exe`. No business rules, Data, or Theme.
 
 Pages read and write only through services or the repository. `data/atten.db`, WAL, and file snapshots stay in the data/connection layer (`src/Atten.Data`).
 
