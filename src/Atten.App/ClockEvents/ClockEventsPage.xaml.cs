@@ -1,5 +1,6 @@
 using Atten.Core;
 using Atten.Data;
+using Atten.UI.Theme;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Windows.Storage.Pickers;
@@ -74,11 +75,14 @@ public sealed partial class ClockEventsPage : Page
 
         try
         {
-            byte[] bytes = File.ReadAllBytes(path);
-            ClockEventImport result = _store.Import(Attlog.Parse(bytes));
-            ShowNotice(AppMessages.ClockImportNotice(result.Added, result.Skipped), danger: false);
+            AttlogReadResult parsed = Attlog.Read(File.ReadAllBytes(path));
+            ClockEventImport result = _store.Import(parsed.Rows);
+            ShowImportResult(
+                result.Added,
+                result.Skipped,
+                parsed.Errors.Concat(result.Errors).ToList());
             _page = 1;
-            Reload(clearNotice: false);
+            Reload();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -151,6 +155,21 @@ public sealed partial class ClockEventsPage : Page
         TablePanel.Visibility = Visibility.Collapsed;
         PagerBar.Visibility = hideTools ? Visibility.Collapsed : Visibility.Visible;
         EventsList.ItemsSource = null;
+    }
+
+    private void ShowImportResult(int added, int skipped, IReadOnlyList<AttlogIssue> errors)
+    {
+        Notice.Text = string.Empty;
+        if (XamlRoot is null)
+        {
+            return;
+        }
+
+        _ = AppConfirmDialog.ShowNoticeAsync(
+            XamlRoot,
+            ActualTheme,
+            AppMessages.ClockImportTitle,
+            AppMessages.ClockImportLines(added, skipped, errors));
     }
 
     private void ShowNotice(string message, bool danger)

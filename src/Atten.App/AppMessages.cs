@@ -1,4 +1,5 @@
 using Atten.Core;
+using Atten.UI.Theme;
 
 namespace Atten.App;
 
@@ -94,6 +95,8 @@ public static class AppMessages
     public const string ClockPickerTitle = "فایل ورود و خروج";
 
     public const string ClockImportNone = "مورد جدیدی افزوده نشد.";
+
+    public const string ClockImportTitle = "نتیجه بارگذاری";
 
     public const string LeaveListFailed = "خواندن مرخصی ممکن نشد";
 
@@ -332,14 +335,31 @@ public static class AppMessages
         return $"باقی‌مانده تخصیص‌نداده: {Leave.FormatSignedLeaveAmount(minutes)}";
     }
 
-    public static string ClockImportNotice(int added, int skipped)
+    public static IReadOnlyList<AppNoticeLine> ClockImportLines(
+        int added,
+        int skipped,
+        IReadOnlyList<AttlogIssue> errors)
     {
-        string text = added > 0 ? $"{added} مورد افزوده شد." : ClockImportNone;
+        var lines = new List<AppNoticeLine>();
         if (skipped > 0)
         {
-            text = $"{text} {skipped} مورد تکراری بود.";
+            lines.Add(new AppNoticeLine($"{skipped} مورد تکراری بود.", "AppWarningText"));
         }
 
-        return text;
+        lines.Add(new AppNoticeLine(
+            added > 0 ? $"{added} مورد افزوده شد." : ClockImportNone,
+            "AppSuccessText"));
+        if (errors.Count == 0)
+        {
+            return lines;
+        }
+
+        lines.Add(new AppNoticeLine($"{errors.Count} مورد خطا داشت.", "AppDangerText"));
+        foreach (AttlogIssue error in errors.OrderBy(item => item.LineNumber))
+        {
+            lines.Add(new AppNoticeLine(error.Message, "AppDangerText"));
+        }
+
+        return lines;
     }
 }

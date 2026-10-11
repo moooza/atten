@@ -18,6 +18,19 @@ public sealed class AppConfirmLine
     public string Value { get; }
 }
 
+public sealed class AppNoticeLine
+{
+    public AppNoticeLine(string text, string styleKey = "AppInkText")
+    {
+        Text = text ?? string.Empty;
+        StyleKey = string.IsNullOrWhiteSpace(styleKey) ? "AppInkText" : styleKey;
+    }
+
+    public string Text { get; }
+
+    public string StyleKey { get; }
+}
+
 public sealed class AppConfirmRequest
 {
     public required string Title { get; init; }
@@ -126,6 +139,72 @@ public static class AppConfirmDialog
         };
         await dialog.ShowAsync();
         return confirmed;
+    }
+
+    public static async Task ShowNoticeAsync(
+        XamlRoot xamlRoot,
+        ElementTheme theme,
+        string title,
+        IReadOnlyList<AppNoticeLine> lines,
+        string closeText = "بستن")
+    {
+        ArgumentNullException.ThrowIfNull(xamlRoot);
+        ArgumentNullException.ThrowIfNull(title);
+        ArgumentNullException.ThrowIfNull(lines);
+
+        var heading = StyledBlock(title, "AppTitleText");
+        var body = new StackPanel
+        {
+            Spacing = 6,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            FlowDirection = FlowDirection.LeftToRight,
+        };
+        var text = new StackPanel
+        {
+            Spacing = 6,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            FlowDirection = FlowDirection.LeftToRight,
+        };
+        foreach (AppNoticeLine line in lines)
+        {
+            text.Children.Add(StyledBlock(line.Text, line.StyleKey));
+        }
+
+        var scroller = new ScrollViewer
+        {
+            Content = text,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalScrollMode = ScrollMode.Disabled,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollMode = ScrollMode.Auto,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+        };
+        if (Application.Current?.Resources.TryGetValue("ConfirmLinesMaxHeight", out object? height) == true
+            && height is double maxHeight)
+        {
+            scroller.MaxHeight = maxHeight;
+        }
+
+        body.Children.Add(scroller);
+        var close = new AppButton
+        {
+            Content = closeText,
+            Kind = AppButtonKind.Primary,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 12, 0, 0),
+        };
+        body.Children.Add(close);
+
+        var dialog = new ContentDialog
+        {
+            Title = heading,
+            Content = body,
+            XamlRoot = xamlRoot,
+            FlowDirection = FlowDirection.RightToLeft,
+            RequestedTheme = theme,
+        };
+        close.Click += (_, _) => dialog.Hide();
+        await dialog.ShowAsync();
     }
 
     private static TextBlock HighlightedLine(AppConfirmLine line, Brush accent)

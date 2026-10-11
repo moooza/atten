@@ -410,6 +410,15 @@
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
+    <Style x:Key="AppWarningText" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{ThemeResource Warning}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource CaptionFontSize}" />
+        <Setter Property="TextAlignment" Value="Right" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
     <Style x:Key="AppAccentText" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{ThemeResource Accent}" />
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />

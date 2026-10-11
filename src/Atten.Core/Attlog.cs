@@ -35,9 +35,31 @@ public static class Attlog
 
     public static IReadOnlyList<AttlogRow> Parse(string text)
     {
+        AttlogReadResult result = Read(text);
+        if (result.Failed > 0)
+        {
+            throw new FormatException(result.FirstError ?? "فایل ردیفی ندارد.");
+        }
+
+        if (result.Rows.Count == 0)
+        {
+            throw new FormatException("فایل ردیفی ندارد.");
+        }
+
+        return result.Rows;
+    }
+
+    public static AttlogReadResult Read(byte[] bytes)
+    {
+        return Read(Decode(bytes));
+    }
+
+    public static AttlogReadResult Read(string text)
+    {
         ArgumentNullException.ThrowIfNull(text);
 
         var rows = new List<AttlogRow>();
+        var errors = new List<AttlogIssue>();
         string[] lines = text.Split(["\r\n", "\n", "\r"], StringSplitOptions.None);
         for (int index = 0; index < lines.Length; index++)
         {
@@ -48,40 +70,54 @@ public static class Attlog
                 continue;
             }
 
-            string[] parts = raw.Split('\t');
-            if (parts.Length < 3)
+            if (!TryReadLine(lineNumber, raw, out AttlogRow row, out string error))
             {
-                throw new FormatException($"سطر {lineNumber} ناقص است.");
+                errors.Add(new AttlogIssue(lineNumber, error));
+                continue;
             }
 
-            string clock = parts[2].Trim();
-            int separator = clock.IndexOf(' ');
-            if (separator <= 0 || separator == clock.Length - 1)
-            {
-                throw new FormatException($"سطر {lineNumber} تاریخ یا ساعت ندارد.");
-            }
-
-            string eventDate = clock[..separator];
-            string eventTime = clock[(separator + 1)..];
-            if (eventDate.Length == 0 || eventTime.Length == 0)
-            {
-                throw new FormatException($"سطر {lineNumber} تاریخ یا ساعت ندارد.");
-            }
-
-            rows.Add(new AttlogRow(
-                lineNumber,
-                parts[0].Trim(),
-                parts[1].Trim(),
-                eventDate,
-                eventTime));
+            rows.Add(row);
         }
 
-        if (rows.Count == 0)
+        return new AttlogReadResult(rows, errors);
+    }
+
+    private static bool TryReadLine(int lineNumber, string raw, out AttlogRow row, out string error)
+    {
+        string[] parts = raw.Split('\t');
+        if (parts.Length < 3)
         {
-            throw new FormatException("فایل ردیفی ندارد.");
+            row = new AttlogRow(lineNumber, string.Empty, string.Empty, string.Empty, string.Empty);
+            error = $"سطر {lineNumber} ناقص است.";
+            return false;
         }
 
-        return rows;
+        string clock = parts[2].Trim();
+        int separator = clock.IndexOf(' ');
+        if (separator <= 0 || separator == clock.Length - 1)
+        {
+            row = new AttlogRow(lineNumber, string.Empty, string.Empty, string.Empty, string.Empty);
+            error = $"سطر {lineNumber} تاریخ یا ساعت ندارد.";
+            return false;
+        }
+
+        string eventDate = clock[..separator];
+        string eventTime = clock[(separator + 1)..];
+        if (eventDate.Length == 0 || eventTime.Length == 0)
+        {
+            row = new AttlogRow(lineNumber, string.Empty, string.Empty, string.Empty, string.Empty);
+            error = $"سطر {lineNumber} تاریخ یا ساعت ندارد.";
+            return false;
+        }
+
+        row = new AttlogRow(
+            lineNumber,
+            parts[0].Trim(),
+            parts[1].Trim(),
+            eventDate,
+            eventTime);
+        error = string.Empty;
+        return true;
     }
 
     private static Encoding CreateWindows1256()
@@ -97,3 +133,14 @@ public sealed record AttlogRow(
     string Name,
     string EventDate,
     string EventTime);
+
+public sealed record AttlogIssue(int LineNumber, string Message);
+
+public sealed record AttlogReadResult(
+    IReadOnlyList<AttlogRow> Rows,
+    IReadOnlyList<AttlogIssue> Errors)
+{
+    public int Failed => Errors.Count;
+
+    public string? FirstError => Errors.Count == 0 ? null : Errors[0].Message;
+}

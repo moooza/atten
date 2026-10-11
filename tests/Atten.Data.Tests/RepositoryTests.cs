@@ -265,8 +265,10 @@ public class RepositoryTests : IDisposable
         ClockEventImport second = store.ClockEvents.Import(Attlog.Parse(log));
         Assert.Equal(2, first.Added);
         Assert.Equal(1, first.Skipped);
+        Assert.Equal(0, first.Failed);
         Assert.Equal(0, second.Added);
         Assert.Equal(3, second.Skipped);
+        Assert.Equal(0, second.Failed);
         Assert.Equal(
             [
                 new ClockEventRecord(
@@ -294,15 +296,20 @@ public class RepositoryTests : IDisposable
     }
 
     [Fact]
-    public void ImportRejectsABadClockWithoutWriting()
+    public void ImportCountsABadClockAsFailedAndKeepsValidRows()
     {
         using var db = new TempDatabase();
         IAttenRepository store = db.OpenStore();
+        const string log =
+            "1002\tKarimi\t2026-09-23 20:11:58\t1\t0\n" +
+            "1002\tKarimi\t2026-09-23 25:00:00\t1\t0\n";
 
-        ArgumentException error = Assert.Throws<ArgumentException>(
-            () => store.ClockEvents.Import(Attlog.Parse("1002\tKarimi\t2026-09-23 25:00:00\t1\t0\n")));
-        Assert.Equal("سطر 1: ساعت معتبر نیست.", error.Message);
-        Assert.Empty(store.ClockEvents.List());
+        ClockEventImport result = store.ClockEvents.Import(Attlog.Parse(log));
+        Assert.Equal(1, result.Added);
+        Assert.Equal(0, result.Skipped);
+        Assert.Equal(1, result.Failed);
+        Assert.Equal([new AttlogIssue(2, "سطر 2: ساعت معتبر نیست.")], result.Errors);
+        Assert.Equal(["2026-09-23"], store.ClockEvents.List().Select(row => row.Date));
     }
 
     [Fact]

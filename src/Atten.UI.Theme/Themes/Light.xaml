@@ -12,6 +12,7 @@
     <Color x:Key="HighlightStrongColor">#D2B5E1</Color>
     <Color x:Key="DangerColor">#B42318</Color>
     <Color x:Key="SuccessColor">#15803D</Color>
+    <Color x:Key="WarningColor">#C2410C</Color>
     <Color x:Key="SuccessSoftColor">#E3F6EA</Color>
     <Color x:Key="OnAccentColor">#FFFFFF</Color>
 
@@ -24,6 +25,7 @@
     <SolidColorBrush x:Key="HighlightStrong" Color="{StaticResource HighlightStrongColor}" />
     <SolidColorBrush x:Key="Danger" Color="{StaticResource DangerColor}" />
     <SolidColorBrush x:Key="Success" Color="{StaticResource SuccessColor}" />
+    <SolidColorBrush x:Key="Warning" Color="{StaticResource WarningColor}" />
     <SolidColorBrush x:Key="SuccessSoft" Color="{StaticResource SuccessSoftColor}" />
     <SolidColorBrush x:Key="OnAccent" Color="{StaticResource OnAccentColor}" />
 

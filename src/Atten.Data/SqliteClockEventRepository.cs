@@ -52,9 +52,16 @@ internal sealed class SqliteClockEventRepository : IClockEventRepository
     {
         ArgumentNullException.ThrowIfNull(rows);
         var prepared = new List<(string RemoteId, string Name, string Date, string Time)>(rows.Count);
+        var errors = new List<AttlogIssue>();
         foreach (AttlogRow row in rows)
         {
-            prepared.Add(PreparedClockEvent(row));
+            if (!TryPreparedClockEvent(row, out var item, out string error))
+            {
+                errors.Add(new AttlogIssue(row.LineNumber, error));
+                continue;
+            }
+
+            prepared.Add(item);
         }
 
         string createdAt = _session.Timestamp();
@@ -113,7 +120,7 @@ internal sealed class SqliteClockEventRepository : IClockEventRepository
                 }
 
                 transaction.Commit();
-                return new ClockEventImport(added, skipped);
+                return new ClockEventImport(added, skipped, errors);
             },
             RepositoryGuard.ClockSaveError);
     }
@@ -263,19 +270,26 @@ internal sealed class SqliteClockEventRepository : IClockEventRepository
         command.Parameters.AddWithValue("$end", end);
     }
 
-    private static (string RemoteId, string Name, string Date, string Time) PreparedClockEvent(AttlogRow row)
+    private static bool TryPreparedClockEvent(
+        AttlogRow row,
+        out (string RemoteId, string Name, string Date, string Time) prepared,
+        out string error)
     {
         try
         {
-            return (
+            prepared = (
                 RepositoryGuard.RequiredText(row.RemoteId, "Remote ID را وارد کنید."),
                 RepositoryGuard.RequiredText(row.Name, "نام را وارد کنید."),
                 RepositoryGuard.StorageDay(RepositoryGuard.ParseStorageDay(row.EventDate)),
                 RepositoryGuard.StorageClockTime(row.EventTime));
+            error = string.Empty;
+            return true;
         }
         catch (ArgumentException ex)
         {
-            throw new ArgumentException($"سطر {row.LineNumber}: {ex.Message}", ex);
+            prepared = default;
+            error = $"سطر {row.LineNumber}: {ex.Message}";
+            return false;
         }
     }
 }

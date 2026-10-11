@@ -15,6 +15,7 @@ public static class Tokens
     public const string Danger = "Danger";
     public const string Success = "Success";
     public const string SuccessSoft = "SuccessSoft";
+    public const string Warning = "Warning";
     public const string OnAccent = "OnAccent";
 
     public const string SurfaceColor = "SurfaceColor";

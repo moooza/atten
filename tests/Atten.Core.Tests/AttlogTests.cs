@@ -32,6 +32,21 @@ public class AttlogTests
     }
 
     [Fact]
+    public void ReadKeepsValidRowsAndCountsBrokenLines()
+    {
+        AttlogReadResult result = Attlog.Read(
+            "1002\tKarimi\t2026-09-23 20:11:58\t1\t0\n" +
+            "1002\tKarimi\n" +
+            "1008\tjamalian\t2026-10-06 18:03:50\t1\t1\n");
+        Assert.Equal(2, result.Rows.Count);
+        Assert.Equal(1, result.Failed);
+        Assert.Equal("سطر 2 ناقص است.", result.FirstError);
+        Assert.Equal([new AttlogIssue(2, "سطر 2 ناقص است.")], result.Errors);
+        Assert.Equal("1002", result.Rows[0].RemoteId);
+        Assert.Equal("1008", result.Rows[1].RemoteId);
+    }
+
+    [Fact]
     public void DecodeReadsUtf8AndStripsABom()
     {
         byte[] bom = [0xEF, 0xBB, 0xBF, .. Encoding.UTF8.GetBytes("1002\tKarimi\t2026-09-23 20:11:58\t1\t0\n")];

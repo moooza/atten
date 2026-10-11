@@ -248,7 +248,10 @@ public sealed record ClockEventRecord(
     long? CreatedBy,
     long? UpdatedBy);
 
-public sealed record ClockEventImport(int Added, int Skipped);
+public sealed record ClockEventImport(int Added, int Skipped, IReadOnlyList<AttlogIssue> Errors)
+{
+    public int Failed => Errors.Count;
+}
 
 public sealed record WorkBalance(
     string RemoteId,
