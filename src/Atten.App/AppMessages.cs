@@ -175,6 +175,54 @@ public static class AppMessages
 
     public const string PayrollReopened = "حقوق به پیش‌نویس برگشت.";
 
+    public const string AdvancedSettings = "تنظیمات پیشرفته";
+
+    public const string OfficialHolidays = "تعطیلات رسمی";
+
+    public const string OfficialHolidayManage = "مدیریت تعطیلات رسمی";
+
+    public const string OfficialHolidayHint =
+        "تعطیلات رسمی هر سال جداگانه ثبت می‌شود. جمعه در این فهرست نیست.";
+
+    public const string OfficialHolidayAdd = "افزودن تعطیلات رسمی";
+
+    public const string OfficialHolidayEdit = "ویرایش تعطیل رسمی";
+
+    public const string OfficialHolidayDelete = "حذف";
+
+    public const string OfficialHolidayDeleteTitle = "حذف تعطیل رسمی";
+
+    public const string OfficialHolidayDeleteAsk = "این تعطیل رسمی حذف شود؟";
+
+    public const string OfficialHolidayDeleteFailed = "حذف تعطیل رسمی ممکن نشد";
+
+    public const string OfficialHolidayListFailed = "خواندن تعطیلات رسمی ممکن نشد";
+
+    public const string OfficialHolidayEmpty = "برای این سال تعطیل رسمی ثبت نشده است.";
+
+    public const string OfficialHolidayChooseYear = "سال را انتخاب کنید.";
+
+    public const string OfficialHolidaySelectOne = "یک تعطیل رسمی را از لیست انتخاب کنید.";
+
+    public const string OfficialHolidayNeedDate = "تاریخ را انتخاب کنید.";
+
+    public const string OfficialHolidayNeedStart = "تاریخ شروع را انتخاب کنید.";
+
+    public const string OfficialHolidayNeedEnd = "تاریخ پایان را انتخاب کنید.";
+
+    public const string OfficialHolidayEndBeforeStart = "تاریخ پایان باید بعد از تاریخ شروع یا برابر با آن باشد.";
+
+    public const string OfficialHolidaySelectNone = "حداقل یک تعطیل رسمی را انتخاب کنید.";
+
+    public const string OfficialHolidayDeleteManyTitle = "حذف تعطیل‌های رسمی";
+
+    public const string OfficialHolidayDeleteManyAsk = "تعطیل‌های رسمی انتخاب‌شده حذف شوند؟";
+
+    public static string OfficialHolidayDays(int count)
+    {
+        return $"معادل: {count} روز";
+    }
+
     public static string CalculationResetPrompt(string shamsiDate)
     {
         return $"ورود و خروج {shamsiDate} پاک شود و دوباره از جدول ورود و خروج خوانده شود؟";
@@ -191,6 +239,11 @@ public static class AppMessages
     }
 
     public static string PayrollCount(int count)
+    {
+        return $"{count} مورد";
+    }
+
+    public static string OfficialHolidayCount(int count)
     {
         return $"{count} مورد";
     }

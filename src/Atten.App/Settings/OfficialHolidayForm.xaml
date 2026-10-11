@@ -1,0 +1,116 @@
+<UserControl
+    x:Class="Atten.App.Settings.OfficialHolidayForm"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:theme="using:Atten.UI.Theme"
+    FlowDirection="LeftToRight">
+    <UserControl.KeyboardAccelerators>
+        <KeyboardAccelerator Key="Enter" Invoked="OnEnterAccelerator" />
+        <KeyboardAccelerator Key="Escape" Invoked="OnEscapeAccelerator" />
+    </UserControl.KeyboardAccelerators>
+    <Border
+        Style="{StaticResource AppPanel}"
+        Padding="{StaticResource FormPadding}"
+        HorizontalAlignment="Stretch"
+        VerticalAlignment="Stretch">
+        <StackPanel>
+            <TextBlock
+                x:Name="Heading"
+                Style="{StaticResource AppTitleText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
+            <TextBlock
+                x:Name="Hint"
+                Style="{StaticResource AppCaptionText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right"
+                TextWrapping="Wrap"
+                Margin="{StaticResource FieldHintMargin}" />
+
+            <TextBlock
+                Text="نوع تاریخ"
+                Style="{StaticResource AppFieldLabel}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                FlowDirection="RightToLeft"
+                Spacing="{StaticResource FieldGap}">
+                <theme:AppRadio
+                    x:Name="SingleRadio"
+                    Content="تک تاریخ"
+                    GroupName="HolidayDateKind"
+                    IsChecked="True" />
+                <theme:AppRadio
+                    x:Name="RangeRadio"
+                    Content="بازه تاریخ"
+                    GroupName="HolidayDateKind" />
+            </StackPanel>
+
+            <StackPanel x:Name="SinglePanel">
+                <TextBlock
+                    Text="تاریخ"
+                    Style="{StaticResource AppFieldLabel}"
+                    HorizontalAlignment="Right"
+                    TextAlignment="Right" />
+                <theme:ShamsiDateField x:Name="DateField" HorizontalAlignment="Stretch" />
+            </StackPanel>
+
+            <StackPanel x:Name="RangePanel" Visibility="Collapsed">
+                <TextBlock
+                    Text="تاریخ شروع"
+                    Style="{StaticResource AppFieldLabel}"
+                    HorizontalAlignment="Right"
+                    TextAlignment="Right" />
+                <theme:ShamsiDateField x:Name="StartField" HorizontalAlignment="Stretch" />
+                <TextBlock
+                    Text="تاریخ پایان"
+                    Style="{StaticResource AppFieldLabel}"
+                    HorizontalAlignment="Right"
+                    TextAlignment="Right" />
+                <theme:ShamsiDateField x:Name="EndField" HorizontalAlignment="Stretch" />
+                <TextBlock
+                    x:Name="Preview"
+                    Style="{StaticResource AppInkText}"
+                    HorizontalAlignment="Right"
+                    TextAlignment="Right"
+                    Margin="0,8,0,0" />
+            </StackPanel>
+
+            <TextBlock
+                Text="عنوان"
+                Style="{StaticResource AppFieldLabel}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
+            <theme:AppTextBox
+                x:Name="TitleBox"
+                HorizontalAlignment="Stretch"
+                FlowDirection="RightToLeft"
+                TextAlignment="Left" />
+
+            <TextBlock
+                x:Name="ErrorText"
+                Style="{StaticResource AppDangerText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right"
+                Margin="0,8,0,0" />
+
+            <StackPanel
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                FlowDirection="RightToLeft"
+                Spacing="{StaticResource FieldGap}"
+                Margin="{StaticResource FormActionsMargin}">
+                <theme:AppButton
+                    Content="ذخیره"
+                    Kind="Primary"
+                    Click="OnSave" />
+                <theme:AppButton
+                    Content="انصراف"
+                    Kind="Secondary"
+                    Click="OnCancel" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

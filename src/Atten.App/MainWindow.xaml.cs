@@ -11,6 +11,10 @@ public sealed partial class MainWindow : Window
 {
     private readonly Dictionary<string, AppNavButton> _navItems = new(StringComparer.Ordinal);
     private string? _active;
+    private FormWindow? _advancedWindow;
+    private AdvancedSettingsForm? _advancedForm;
+    private FormWindow? _holidaysWindow;
+    private OfficialHolidaysForm? _holidaysForm;
 
     public MainWindow(string? notice = null)
     {
@@ -25,6 +29,11 @@ public sealed partial class MainWindow : Window
 
         Theme.Changed += (_, _) => WindowChrome.Apply(this);
         WindowChrome.Apply(this);
+        Closed += (_, _) =>
+        {
+            _holidaysWindow?.Close();
+            _advancedWindow?.Close();
+        };
         BuildNavigation();
         BindSettings();
         SetNotice(notice);
@@ -89,10 +98,84 @@ public sealed partial class MainWindow : Window
 
     private void BindSettings()
     {
+        var form = new SettingsForm();
+        form.AdvancedRequested += (_, _) => OpenAdvancedSettings();
         SettingsButton.Flyout = new AppPopup
         {
-            Content = new SettingsForm(),
+            Content = form,
             Placement = Microsoft.UI.Xaml.Controls.Primitives.FlyoutPlacementMode.Bottom,
         };
+    }
+
+    private void OpenAdvancedSettings()
+    {
+        SettingsButton.Flyout?.Hide();
+        if (_advancedWindow is null || _advancedForm is null)
+        {
+            _advancedForm = new AdvancedSettingsForm();
+            _advancedForm.HolidaysRequested += OnHolidaysRequested;
+            _advancedForm.Cancelled += OnAdvancedCancelled;
+            _advancedWindow = new FormWindow(
+                AppMessages.AdvancedSettings,
+                _advancedForm,
+                new SizeInt32(420, 480));
+            _advancedWindow.Closed += OnAdvancedClosed;
+        }
+
+        _advancedWindow.BringForward();
+    }
+
+    private void OnHolidaysRequested(object? sender, EventArgs args)
+    {
+        OpenOfficialHolidays();
+    }
+
+    private void OpenOfficialHolidays()
+    {
+        if (_holidaysWindow is null || _holidaysForm is null)
+        {
+            _holidaysForm = new OfficialHolidaysForm();
+            _holidaysForm.Cancelled += OnHolidaysCancelled;
+            _holidaysWindow = new FormWindow(
+                AppMessages.OfficialHolidays,
+                _holidaysForm,
+                AppWindow.Size);
+            _holidaysWindow.Closed += OnHolidaysClosed;
+        }
+
+        _holidaysWindow.BringForward();
+    }
+
+    private void OnAdvancedCancelled(object? sender, EventArgs args)
+    {
+        _advancedWindow?.Close();
+    }
+
+    private void OnHolidaysCancelled(object? sender, EventArgs args)
+    {
+        _holidaysWindow?.Close();
+    }
+
+    private void OnAdvancedClosed(object sender, WindowEventArgs args)
+    {
+        if (_advancedForm is not null)
+        {
+            _advancedForm.HolidaysRequested -= OnHolidaysRequested;
+            _advancedForm.Cancelled -= OnAdvancedCancelled;
+        }
+
+        _advancedWindow = null;
+        _advancedForm = null;
+    }
+
+    private void OnHolidaysClosed(object sender, WindowEventArgs args)
+    {
+        if (_holidaysForm is not null)
+        {
+            _holidaysForm.Cancelled -= OnHolidaysCancelled;
+        }
+
+        _holidaysWindow = null;
+        _holidaysForm = null;
     }
 }

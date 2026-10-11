@@ -1,0 +1,160 @@
+<UserControl
+    x:Class="Atten.App.Settings.OfficialHolidaysForm"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Atten.App.Settings"
+    xmlns:theme="using:Atten.UI.Theme"
+    FlowDirection="RightToLeft">
+    <UserControl.KeyboardAccelerators>
+        <KeyboardAccelerator Key="Escape" Invoked="OnEscapeAccelerator" />
+    </UserControl.KeyboardAccelerators>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Margin="{StaticResource HeaderBottomMargin}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel
+                Grid.Column="0"
+                Orientation="Horizontal"
+                VerticalAlignment="Center"
+                Spacing="{StaticResource PageGap}">
+                <TextBlock
+                    x:Name="Heading"
+                    Style="{StaticResource AppTitleText}" />
+                <TextBlock x:Name="CountText" Style="{StaticResource AppCaptionText}" />
+            </StackPanel>
+            <StackPanel
+                Grid.Column="1"
+                Orientation="Horizontal"
+                VerticalAlignment="Center"
+                Spacing="{StaticResource FieldGap}">
+                <TextBlock x:Name="Notice" Style="{StaticResource AppDangerText}" />
+                <theme:AppBulkActions x:Name="BulkActions" />
+                <theme:AppButton
+                    x:Name="EditButton"
+                    Kind="Secondary"
+                    Click="OnEdit" />
+                <theme:AppButton
+                    x:Name="AddButton"
+                    Kind="Primary"
+                    Click="OnAdd" />
+            </StackPanel>
+        </Grid>
+
+        <StackPanel
+            Grid.Row="1"
+            Orientation="Horizontal"
+            HorizontalAlignment="Left"
+            Spacing="{StaticResource PageGap}"
+            Margin="{StaticResource HeaderBottomMargin}">
+            <TextBlock
+                Text="سال"
+                Style="{StaticResource AppFieldLabel}"
+                Margin="0"
+                VerticalAlignment="Center" />
+            <theme:AppComboBox
+                x:Name="YearCombo"
+                Width="100"
+                VerticalAlignment="Center" />
+        </StackPanel>
+
+        <TextBlock
+            x:Name="EmptyText"
+            Grid.Row="2"
+            Style="{StaticResource AppCaptionText}"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center" />
+
+        <Border
+            x:Name="TablePanel"
+            Grid.Row="2"
+            Style="{StaticResource AppPanel}"
+            Visibility="Collapsed">
+            <theme:AppListView
+                x:Name="HolidayList"
+                Background="{ThemeResource Surface}"
+                BorderThickness="0"
+                SelectionMode="Single"
+                DoubleTapped="OnRowDoubleTapped"
+                RightTapped="OnRowRightTapped"
+                SelectionChanged="OnSelectionChanged">
+                <ListView.Header>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid
+                            Padding="{StaticResource ListCellPadding}"
+                            VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="1.1*" />
+                                <ColumnDefinition Width="2*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel
+                                Grid.Column="0"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Spacing="{StaticResource FieldGap}">
+                                <theme:AppSelectBox
+                                    x:Name="SelectAllBox"
+                                    IsThreeState="True"
+                                    VerticalAlignment="Center" />
+                                <TextBlock
+                                    Text="انتخاب"
+                                    Style="{StaticResource AppListHeaderText}"
+                                    VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock
+                                Grid.Column="1"
+                                Text="تاریخ"
+                                Style="{StaticResource AppListHeaderText}" />
+                            <TextBlock
+                                Grid.Column="2"
+                                Text="عنوان"
+                                Style="{StaticResource AppListHeaderText}" />
+                        </Grid>
+                        <Border
+                            Grid.Row="1"
+                            Height="1"
+                            Background="{ThemeResource Line}" />
+                    </Grid>
+                </ListView.Header>
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem" BasedOn="{StaticResource AppListViewItem}" />
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="local:OfficialHolidayRow">
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="1.1*" />
+                                <ColumnDefinition Width="2*" />
+                            </Grid.ColumnDefinitions>
+                            <theme:AppSelectBox
+                                Grid.Column="0"
+                                IsChosen="{x:Bind IsChosen, Mode=TwoWay}"
+                                VerticalAlignment="Center" />
+                            <TextBlock
+                                Grid.Column="1"
+                                Text="{x:Bind Date}"
+                                Style="{StaticResource AppListCellText}" />
+                            <TextBlock
+                                Grid.Column="2"
+                                Text="{x:Bind Title}"
+                                Style="{StaticResource AppListCellText}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </theme:AppListView>
+        </Border>
+    </Grid>
+</UserControl>
