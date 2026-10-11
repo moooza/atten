@@ -1,19 +1,20 @@
+using Atten.Core;
 using Atten.UI.Theme;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
-using Windows.System;
+using Microsoft.UI.Xaml.Controls.Primitives;
 
 namespace Atten.App.Calculation;
 
 internal sealed class SheetDayRowView : UserControl
 {
-    private readonly SheetDayRow _row;
+    private SheetDayRow _row;
     private readonly int _punchCount;
     private readonly SheetDayCallbacks _callbacks;
     private readonly Border _frame = new();
     private readonly Grid _grid = new();
-    private AppTextBox? _editor;
+    private ClockTimeField? _editor;
+    private AppPopup? _popup;
     private int _editSlot = -1;
     private bool _committing;
 
@@ -28,13 +29,23 @@ internal sealed class SheetDayRowView : UserControl
         HorizontalAlignment = HorizontalAlignment.Stretch;
         _frame.Child = _grid;
         Content = _frame;
-        Loaded += (_, _) => Build();
+        Build();
         ActualThemeChanged += (_, _) =>
         {
             CloseEditor();
             _grid.Children.Clear();
             Build();
         };
+    }
+
+    public string DateKey => _row.DateKey;
+
+    public void Bind(SheetDayRow row)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        CloseEditor();
+        _row = row;
+        Build();
     }
 
     public bool CommitEdit()
@@ -45,7 +56,7 @@ internal sealed class SheetDayRowView : UserControl
         }
 
         _committing = true;
-        string text = _editor.Text;
+        string text = _editor.CommitText;
         int slot = _editSlot;
         CloseEditor();
         _committing = false;
@@ -53,12 +64,47 @@ internal sealed class SheetDayRowView : UserControl
         return true;
     }
 
+    public void CancelEdit()
+    {
+        CloseEditor();
+    }
+
+    private void ShiftSlots(bool forward)
+    {
+        if (_editor is null || _editSlot < 0 || _committing)
+        {
+            return;
+        }
+
+        try
+        {
+            var working = _row.Record.Slots.ToList();
+            while (working.Count <= _editSlot)
+            {
+                working.Add(null);
+            }
+
+            working[_editSlot] = Sheet.ParseClock(_editor.CommitText);
+            IReadOnlyList<string?> shifted = forward
+                ? Sheet.ShiftSlotsForward(working, _editSlot)
+                : Sheet.ShiftSlotsBackward(working, _editSlot);
+            CloseEditor();
+            _callbacks.SaveSlots(_row.DateKey, shifted);
+        }
+        catch (Exception ex) when (ex is ArgumentException or FormatException)
+        {
+            _callbacks.ShowNotice(ex.Message);
+        }
+    }
+
     private void Build()
     {
         _grid.Children.Clear();
         SheetLayout.AddColumns(_grid, _punchCount);
         _grid.Padding = Look.Thickness("ListCellPadding", new Thickness(8, 6, 8, 6));
-        _grid.Background = Theme.Brush(this, Tokens.Surface);
+        Microsoft.UI.Xaml.Media.Brush fill = Theme.Brush(this, RowToken());
+        _grid.Background = fill;
+        _frame.Background = fill;
         _frame.BorderBrush = Theme.Brush(this, Tokens.Line);
         _frame.BorderThickness = new Thickness(0, 0, 0, 1);
 
@@ -83,17 +129,6 @@ internal sealed class SheetDayRowView : UserControl
         Place(Cell(_row.Balance), SheetLayout.BalanceColumn(_punchCount));
         Place(Cell(_row.LeaveText), SheetLayout.LeaveColumn(_punchCount));
         Place(Actions(), SheetLayout.ActionsColumn(_punchCount));
-        if (_row.OnLeave || _row.Incomplete)
-        {
-            var mark = new Border
-            {
-                Width = 4,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Background = Theme.Brush(this, _row.OnLeave ? Tokens.Success : Tokens.Danger),
-            };
-            Grid.SetColumnSpan(mark, _grid.ColumnDefinitions.Count);
-            _grid.Children.Add(mark);
-        }
     }
 
     private Border PunchCell(int slot)
@@ -101,74 +136,87 @@ internal sealed class SheetDayRowView : UserControl
         var label = Cell(_row.Slots[slot]);
         var hit = new Border
         {
-            Background = Theme.Brush(this, Tokens.Surface),
+            Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent),
             Child = label,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch,
         };
-        int column = SheetLayout.PunchColumn(slot);
-        hit.Tapped += (_, _) =>
+        hit.Tapped += (_, args) =>
         {
-            if (_callbacks.CommitOthers(this))
-            {
-                return;
-            }
-
-            BeginEdit(slot, column, _row.Slots[slot]);
+            args.Handled = true;
+            _callbacks.DismissOthers(this);
+            DispatcherQueue.TryEnqueue(() => BeginEdit(slot, hit, _row.Slots[slot]));
         };
         return hit;
     }
 
-    private void BeginEdit(int slot, int column, string current)
+    private void BeginEdit(int slot, FrameworkElement anchor, string current)
     {
-        if (_editor is not null)
+        if (_editor is not null && _editSlot == slot)
         {
-            CommitEdit();
             return;
         }
 
-        var box = new AppTextBox
+        CloseEditor();
+        var field = new ClockTimeField
         {
             Text = current,
-            TextAlignment = TextAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
-        box.KeyDown += OnEditorKey;
-        box.LostFocus += (_, _) => CommitEdit();
-        Grid.SetColumn(box, column);
-        _grid.Children.Add(box);
-        _editor = box;
-        _editSlot = slot;
-        box.Loaded += (_, _) =>
+        field.Confirmed += (_, _) => CommitEdit();
+        field.ShiftedLeft += (_, _) => ShiftSlots(forward: true);
+        field.ShiftedRight += (_, _) => ShiftSlots(forward: false);
+        field.Cancelled += (_, _) => CloseEditor();
+        var popup = new AppPopup
         {
-            box.Focus(FocusState.Programmatic);
-            box.SelectAll();
+            Content = field,
+            Placement = FlyoutPlacementMode.Bottom,
+            MinPresenterWidth = field.MinWidth,
         };
+        popup.Closed += OnPopupClosed;
+        _editor = field;
+        _popup = popup;
+        _editSlot = slot;
+        popup.ShowAt(anchor);
+        field.Loaded += (_, _) => field.FocusInput();
     }
 
-    private void OnEditorKey(object sender, KeyRoutedEventArgs args)
+    private void OnPopupClosed(object? sender, object args)
     {
-        if (args.Key == VirtualKey.Enter)
-        {
-            CommitEdit();
-            args.Handled = true;
-        }
-        else if (args.Key == VirtualKey.Escape)
-        {
-            CloseEditor();
-            args.Handled = true;
-        }
+        CloseEditor();
     }
 
     private void CloseEditor()
     {
-        if (_editor is not null)
+        if (_popup is not null)
         {
-            _grid.Children.Remove(_editor);
+            _popup.Closed -= OnPopupClosed;
+            _popup.Hide();
+            _popup = null;
         }
 
         _editor = null;
         _editSlot = -1;
+    }
+
+    private string RowToken()
+    {
+        if (_row.OnLeave && _row.Record.BalanceMinutes >= 0)
+        {
+            return Tokens.SuccessSoft;
+        }
+
+        if (_row.Holiday)
+        {
+            return Tokens.DangerSoft;
+        }
+
+        if (_row.Record.BalanceMinutes < 0 || _row.Incomplete)
+        {
+            return Tokens.WarningSoft;
+        }
+
+        return Tokens.Surface;
     }
 
     private StackPanel Actions()
@@ -224,11 +272,15 @@ internal sealed class SheetDayCallbacks
 
     public required Action<string, int, string> SaveSlot { get; init; }
 
+    public required Action<string, IReadOnlyList<string?>> SaveSlots { get; init; }
+
+    public required Action<string> ShowNotice { get; init; }
+
     public required Action<string> ResetDay { get; init; }
 
     public required Action<string> AddLeave { get; init; }
 
-    public required Func<SheetDayRowView, bool> CommitOthers { get; init; }
+    public required Action<SheetDayRowView> DismissOthers { get; init; }
 }
 
 internal static class Look

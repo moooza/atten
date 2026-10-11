@@ -125,7 +125,7 @@ internal sealed class SqliteCalculationRepository : ICalculationRepository
             using SqliteCommand command = connection.CreateCommand();
             command.CommandText =
                 """
-                SELECT remote_id, date, balance_minutes, holiday
+                SELECT remote_id, date, balance_minutes, holiday, holiday_override
                 FROM calculation_days
                 WHERE remote_id = $remote_id AND date >= $start AND date <= $end
                 ORDER BY date
@@ -141,7 +141,8 @@ internal sealed class SqliteCalculationRepository : ICalculationRepository
                     reader.GetString(0),
                     reader.GetString(1),
                     (int)reader.GetInt64(2),
-                    !reader.IsDBNull(3) && reader.GetInt64(3) != 0));
+                    !reader.IsDBNull(3) && reader.GetInt64(3) != 0,
+                    reader.IsDBNull(4) ? null : reader.GetInt64(4) != 0));
             }
 
             return rows;
@@ -167,11 +168,11 @@ internal sealed class SqliteCalculationRepository : ICalculationRepository
                     command.CommandText =
                         """
                         INSERT INTO calculation_days (
-                            remote_id, date, balance_minutes, holiday, created_at, updated_at,
+                            remote_id, date, balance_minutes, holiday, holiday_override, created_at, updated_at,
                             created_by, updated_by
                         )
                         VALUES (
-                            $remote_id, $date, $balance_minutes, $holiday, $created_at, $updated_at,
+                            $remote_id, $date, $balance_minutes, $holiday, NULL, $created_at, $updated_at,
                             $created_by, $updated_by
                         )
                         ON CONFLICT (remote_id, date) DO UPDATE SET
@@ -209,21 +210,23 @@ internal sealed class SqliteCalculationRepository : ICalculationRepository
                 command.CommandText =
                     """
                     INSERT INTO calculation_days (
-                        remote_id, date, balance_minutes, holiday, created_at, updated_at,
+                        remote_id, date, balance_minutes, holiday, holiday_override, created_at, updated_at,
                         created_by, updated_by
                     )
                     VALUES (
-                        $remote_id, $date, 0, $holiday, $created_at, $updated_at,
+                        $remote_id, $date, 0, $holiday, $holiday_override, $created_at, $updated_at,
                         $created_by, $updated_by
                     )
                     ON CONFLICT (remote_id, date) DO UPDATE SET
                         holiday = excluded.holiday,
+                        holiday_override = excluded.holiday_override,
                         updated_at = excluded.updated_at,
                         updated_by = excluded.updated_by
                     """;
                 command.Parameters.AddWithValue("$remote_id", personKey);
                 command.Parameters.AddWithValue("$date", storedDate);
                 command.Parameters.AddWithValue("$holiday", flag);
+                command.Parameters.AddWithValue("$holiday_override", flag);
                 command.Parameters.AddWithValue("$created_at", stamp);
                 command.Parameters.AddWithValue("$updated_at", stamp);
                 command.Parameters.AddWithValue("$created_by", _session.ActorId);

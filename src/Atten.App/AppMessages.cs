@@ -161,6 +161,8 @@ public static class AppMessages
 
     public const string CalculationResetTitle = "بازنشانی ورود و خروج";
 
+    public const string CalculationResetAsk = "ورود و خروج این روز پاک شود و دوباره از جدول ورود و خروج خوانده شود؟";
+
     public const string CalculationAddLeave = "افزودن مرخصی";
 
     public const string CalculationReset = "بازنشانی";
@@ -256,11 +258,6 @@ public static class AppMessages
     public static string OfficialHolidayDays(int count)
     {
         return $"معادل: {count} روز";
-    }
-
-    public static string CalculationResetPrompt(string shamsiDate)
-    {
-        return $"ورود و خروج {shamsiDate} پاک شود و دوباره از جدول ورود و خروج خوانده شود؟";
     }
 
     public static string ClockCount(int count)

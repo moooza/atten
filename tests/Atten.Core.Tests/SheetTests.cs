@@ -55,6 +55,26 @@ public class SheetTests
     }
 
     [Fact]
+    public void SheetKeepsAnAbsentWorkingDayInTheChosenRange()
+    {
+        IReadOnlyList<SheetRow> rows = Sheet.BuildSheet(
+            new DateOnly(2026, 10, 6),
+            new DateOnly(2026, 10, 8),
+            [new DeviceDay("2026-10-08", ["09:00:00", "17:00:00"])],
+            NoOverrides,
+            8);
+
+        Assert.Equal(["2026-10-06", "2026-10-07", "2026-10-08"], rows.Select(row => row.Date));
+        Assert.Equal(new string?[] { null, null }, rows[0].Slots);
+        Assert.False(rows[0].Holiday);
+        Assert.True(rows[0].Incomplete);
+        Assert.Equal(-480, rows[0].BalanceMinutes);
+        Assert.Equal(new string?[] { null, null }, rows[1].Slots);
+        Assert.True(rows[1].Incomplete);
+        Assert.Equal(-480, rows[1].BalanceMinutes);
+    }
+
+    [Fact]
     public void HolidayPresenceIsOvertimeAndAClearedFridayUsesDailyHours()
     {
         IReadOnlyList<SheetRow> present = Sheet.BuildSheet(
@@ -229,6 +249,116 @@ public class SheetTests
         Assert.Equal([dayMinutes, 0, dayMinutes], acrossFriday.Select(row => row.LeaveMinutes));
         Assert.Equal([0, 0, 0], acrossFriday.Select(row => row.BalanceMinutes));
         Assert.Equal([false, false, false], acrossFriday.Select(row => row.Incomplete));
+    }
+
+    [Fact]
+    public void ShiftSlotsForwardFillsTheFirstEmptyAheadAndLeavesTheRest()
+    {
+        IReadOnlyList<string?> shifted = Sheet.ShiftSlotsForward(
+            ["08:00:00", "12:00:00", null, "17:00:00"],
+            0);
+        Assert.Equal(new string?[] { null, "08:00:00", "12:00:00", "17:00:00" }, shifted);
+    }
+
+    [Fact]
+    public void ShiftSlotsForwardInsertsAPairWhenNoEmptyIsAhead()
+    {
+        IReadOnlyList<string?> shifted = Sheet.ShiftSlotsForward(
+            ["08:00:00", "12:00:00", "13:00:00", "17:00:00"],
+            1);
+        Assert.Equal(new string?[] { "08:00:00", null, "12:00:00", "13:00:00", "17:00:00", null }, shifted);
+    }
+
+    [Fact]
+    public void ShiftSlotsBackwardFillsTheFirstEmptyTowardEntryOneAndLeavesTheRest()
+    {
+        IReadOnlyList<string?> shifted = Sheet.ShiftSlotsBackward(
+            [null, "08:00:00", "12:00:00", "13:00:00"],
+            1);
+        Assert.Equal(new string?[] { "08:00:00", null, "12:00:00", "13:00:00" }, shifted);
+    }
+
+    [Fact]
+    public void ShiftSlotsBackwardOnTheLeftmostFilledSlotDoesNotSwap()
+    {
+        string?[] full = ["08:00:00", "12:00:00", "13:00:00", "17:00:00"];
+        Assert.Equal(full, Sheet.ShiftSlotsBackward(full, 3));
+    }
+
+    [Fact]
+    public void ShiftSlotsBackwardOnEntryOneDoesNotMove()
+    {
+        string?[] full = ["08:00:00", "12:00:00", "13:00:00", "17:00:00"];
+        Assert.Equal(full, Sheet.ShiftSlotsBackward(full, 0));
+    }
+
+    [Fact]
+    public void ShiftSlotsForwardOnAFullRowAddsANewPairFromTheFirstOrLastSlot()
+    {
+        IReadOnlyList<string?> first = Sheet.ShiftSlotsForward(
+            ["08:00:00", "12:00:00", "13:00:00", "17:00:00"],
+            0);
+        Assert.Equal(new string?[] { null, "08:00:00", "12:00:00", "13:00:00", "17:00:00", null }, first);
+
+        IReadOnlyList<string?> last = Sheet.ShiftSlotsForward(
+            ["08:00:00", "12:00:00", "13:00:00", "17:00:00"],
+            3);
+        Assert.Equal(new string?[] { "08:00:00", "12:00:00", "13:00:00", null, "17:00:00", null }, last);
+    }
+
+    [Fact]
+    public void ShiftSlotsBackwardOnAnEmptySlotDoesNotPullTheRow()
+    {
+        string?[] alreadyEmpty = [null, "08:00:00", "12:00:00", "13:00:00", "17:00:00", null];
+        Assert.Equal(alreadyEmpty, Sheet.ShiftSlotsBackward(alreadyEmpty, 0));
+        Assert.Equal(alreadyEmpty, Sheet.ShiftSlotsBackward(alreadyEmpty, 5));
+    }
+
+    [Fact]
+    public void TrailingEmptyPairsDoNotMakeACompleteDayIncomplete()
+    {
+        IReadOnlyList<SheetRow> rows = Sheet.BuildSheet(
+            new DateOnly(2026, 9, 5),
+            new DateOnly(2026, 9, 5),
+            [new DeviceDay("2026-09-05", ["07:00:00", "21:10:00"])],
+            new Dictionary<string, IReadOnlyDictionary<int, string?>>
+            {
+                ["2026-09-05"] = new Dictionary<int, string?> { [2] = null, [3] = null },
+            },
+            7 + 20.0 / 60);
+        Assert.Equal(["07:00:00", "21:10:00"], rows[0].Slots);
+        Assert.False(rows[0].Incomplete);
+        Assert.Equal(410, rows[0].BalanceMinutes);
+        Assert.Equal("+6.50", Sheet.FormatBalance(rows[0].BalanceMinutes));
+    }
+
+    [Fact]
+    public void OfficialHolidayUsesTheCatalogUnlessThePersonClearsTheDay()
+    {
+        DateOnly thursday = new(2026, 10, 8);
+        IReadOnlySet<string> official = OfficialHoliday.Catalog([thursday]);
+        IReadOnlyList<SheetRow> off = Sheet.BuildSheet(
+            thursday,
+            thursday,
+            [],
+            NoOverrides,
+            8,
+            officialHolidays: official);
+        Assert.True(off[0].Holiday);
+        Assert.False(off[0].Incomplete);
+        Assert.Equal(0, off[0].BalanceMinutes);
+
+        IReadOnlyList<SheetRow> working = Sheet.BuildSheet(
+            thursday,
+            thursday,
+            [],
+            NoOverrides,
+            8,
+            new Dictionary<string, bool> { [Dates.StorageDate(thursday)] = false },
+            officialHolidays: official);
+        Assert.False(working[0].Holiday);
+        Assert.True(working[0].Incomplete);
+        Assert.Equal(-480, working[0].BalanceMinutes);
     }
 
     [Fact]

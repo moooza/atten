@@ -257,7 +257,8 @@ public sealed record WorkBalance(
     string RemoteId,
     string Date,
     int BalanceMinutes,
-    bool Holiday);
+    bool Holiday,
+    bool? HolidayOverride = null);
 
 public sealed record PayrollRunRecord(
     long Id,

@@ -72,6 +72,23 @@ public class DatesTests
     }
 
     [Fact]
+    public void ClockInputMaskInsertsColonsEveryTwoDigits()
+    {
+        Assert.Equal(string.Empty, Dates.FormatClockInput(""));
+        Assert.Equal("0", Dates.FormatClockInput("0"));
+        Assert.Equal("08:", Dates.FormatClockInput("08"));
+        Assert.Equal("08:3", Dates.FormatClockInput("083"));
+        Assert.Equal("08:30:", Dates.FormatClockInput("0830"));
+        Assert.Equal("08:30:0", Dates.FormatClockInput("08300"));
+        Assert.Equal("08:30:00", Dates.FormatClockInput("083000"));
+        Assert.Equal("08:30:00", Dates.FormatClockInput("08:30:00"));
+        Assert.Equal("08:30:00", Dates.FormatClockInput("۰۸۳۰۰۰"));
+        Assert.Equal("08:30:00", Dates.FormatClockInput("08300099"));
+        Assert.Equal("08:", Dates.FormatClockInput("08:"));
+        Assert.Equal("08", Dates.ClockInputDigits("۰۸:"));
+    }
+
+    [Fact]
     public void InclusiveDaysKeepsStartAndEndAndRejectsAReversedRange()
     {
         DateOnly start = Dates.ParseShamsiDate("1405/01/19");

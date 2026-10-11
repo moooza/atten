@@ -15,6 +15,8 @@ public static class Tokens
     public const string Danger = "Danger";
     public const string Success = "Success";
     public const string SuccessSoft = "SuccessSoft";
+    public const string WarningSoft = "WarningSoft";
+    public const string DangerSoft = "DangerSoft";
     public const string Warning = "Warning";
     public const string OnAccent = "OnAccent";
 
@@ -26,4 +28,6 @@ public static class Tokens
     public const string HighlightColor = "HighlightColor";
     public const string HighlightStrongColor = "HighlightStrongColor";
     public const string SuccessSoftColor = "SuccessSoftColor";
+    public const string WarningSoftColor = "WarningSoftColor";
+    public const string DangerSoftColor = "DangerSoftColor";
 }

@@ -12,6 +12,7 @@ namespace Atten.Data;
 /// 014 adds official holidays (Gregorian date + title + actors).
 /// 015 adds leave kind and year-to-year leftover transfers.
 /// 016 adds an optional leave description.
+/// 017 keeps a person holiday tick separate from Friday and the official catalog.
 /// </summary>
 public static class Migrator
 {

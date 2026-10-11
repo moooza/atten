@@ -168,6 +168,66 @@ public static class Dates
         return $"{digits[..4]}/{digits[4..6]}/{digits[6..]}";
     }
 
+    /// <summary>
+    /// Digits from a typed clock, Persian/Arabic numerals included, at most HHMMSS.
+    /// </summary>
+    public static string ClockInputDigits(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        Span<char> digits = stackalloc char[6];
+        int count = 0;
+        foreach (char c in Persian.EnglishDigits(text))
+        {
+            if (c is < '0' or > '9')
+            {
+                continue;
+            }
+
+            digits[count] = c;
+            count += 1;
+            if (count == 6)
+            {
+                break;
+            }
+        }
+
+        return count == 0 ? string.Empty : new string(digits[..count]);
+    }
+
+    /// <summary>
+    /// Typed clock with a colon after every two digits: 08:, 08:30:, 08:30:00.
+    /// </summary>
+    public static string FormatClockInput(string text)
+    {
+        string digits = ClockInputDigits(text);
+        if (digits.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        if (digits.Length < 2)
+        {
+            return digits;
+        }
+
+        if (digits.Length == 2)
+        {
+            return $"{digits}:";
+        }
+
+        if (digits.Length < 4)
+        {
+            return $"{digits[..2]}:{digits[2..]}";
+        }
+
+        if (digits.Length == 4)
+        {
+            return $"{digits[..2]}:{digits[2..]}:";
+        }
+
+        return $"{digits[..2]}:{digits[2..4]}:{digits[4..]}";
+    }
+
     public static DateTime ParseShamsiDateTime(string text)
     {
         ArgumentNullException.ThrowIfNull(text);

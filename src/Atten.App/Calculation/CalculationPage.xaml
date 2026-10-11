@@ -18,24 +18,33 @@
             </Grid.RowDefinitions>
 
             <Grid Margin="{StaticResource HeaderBottomMargin}">
-                <TextBlock
-                    Text="محاسبه"
-                    Style="{StaticResource AppTitleText}"
-                    HorizontalAlignment="Right" />
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel
+                    Grid.Column="0"
+                    Orientation="Horizontal"
+                    VerticalAlignment="Center"
+                    Spacing="{StaticResource PageGap}">
+                    <TextBlock Text="محاسبه" Style="{StaticResource AppTitleText}" />
+                </StackPanel>
                 <TextBlock
                     x:Name="Notice"
+                    Grid.Column="1"
                     Style="{StaticResource AppDangerText}"
-                    HorizontalAlignment="Left" />
+                    VerticalAlignment="Center" />
             </Grid>
 
             <ScrollViewer
                 Grid.Row="1"
                 Margin="{StaticResource HeaderBottomMargin}"
+                HorizontalAlignment="Left"
                 HorizontalScrollBarVisibility="Auto"
                 VerticalScrollBarVisibility="Disabled">
                 <StackPanel
                     Orientation="Horizontal"
-                    HorizontalAlignment="Right"
+                    HorizontalAlignment="Left"
                     Spacing="{StaticResource PageGap}">
                     <TextBlock
                         Text="کارمند"
@@ -75,11 +84,33 @@
                 Grid.Row="2"
                 Style="{StaticResource AppPanel}"
                 Visibility="Collapsed">
-                <ScrollViewer
-                    HorizontalScrollBarVisibility="Auto"
-                    VerticalScrollBarVisibility="Auto">
-                    <StackPanel x:Name="SheetHost" />
-                </ScrollViewer>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <ScrollViewer
+                        x:Name="HeaderScroll"
+                        Grid.Row="0"
+                        HorizontalScrollBarVisibility="Hidden"
+                        VerticalScrollBarVisibility="Disabled"
+                        HorizontalScrollMode="Enabled"
+                        VerticalScrollMode="Disabled">
+                        <Border
+                            x:Name="HeaderHost"
+                            Background="{ThemeResource Surface}"
+                            BorderBrush="{ThemeResource Line}"
+                            BorderThickness="0,0,0,1" />
+                    </ScrollViewer>
+                    <ScrollViewer
+                        x:Name="BodyScroll"
+                        Grid.Row="1"
+                        HorizontalScrollBarVisibility="Auto"
+                        VerticalScrollBarVisibility="Auto"
+                        ViewChanged="OnSheetScroll">
+                        <StackPanel x:Name="SheetHost" />
+                    </ScrollViewer>
+                </Grid>
             </Border>
         </Grid>
     </Grid>

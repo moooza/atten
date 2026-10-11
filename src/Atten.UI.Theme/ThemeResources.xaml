@@ -173,6 +173,34 @@
         <Setter Property="TextAlignment" Value="Right" />
     </Style>
 
+    <Style x:Key="AppTextBoxNoClearStyle" TargetType="TextBox" BasedOn="{StaticResource AppTextBoxStyle}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Grid>
+                        <ScrollViewer
+                            x:Name="ContentElement"
+                            Margin="{TemplateBinding Padding}"
+                            HorizontalScrollBarVisibility="Hidden"
+                            VerticalScrollBarVisibility="Hidden"
+                            IsTabStop="False"
+                            ZoomMode="Disabled"
+                            AutomationProperties.AccessibilityView="Raw" />
+                        <TextBlock
+                            x:Name="PlaceholderTextContentPresenter"
+                            Margin="{TemplateBinding Padding}"
+                            Foreground="{ThemeResource Muted}"
+                            FontFamily="{TemplateBinding FontFamily}"
+                            FontSize="{TemplateBinding FontSize}"
+                            Text="{TemplateBinding PlaceholderText}"
+                            TextAlignment="{TemplateBinding TextAlignment}"
+                            IsHitTestVisible="False" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="AppComboBoxStyle" TargetType="ComboBox">
         <Setter Property="Background" Value="{ThemeResource Surface}" />
         <Setter Property="Foreground" Value="{ThemeResource Ink}" />

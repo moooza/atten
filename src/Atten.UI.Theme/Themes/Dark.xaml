@@ -14,6 +14,8 @@
     <Color x:Key="SuccessColor">#4ADE80</Color>
     <Color x:Key="WarningColor">#FB923C</Color>
     <Color x:Key="SuccessSoftColor">#1F3D2C</Color>
+    <Color x:Key="WarningSoftColor">#3D2A14</Color>
+    <Color x:Key="DangerSoftColor">#3D1C1C</Color>
     <Color x:Key="OnAccentColor">#1A1024</Color>
 
     <SolidColorBrush x:Key="Surface" Color="{StaticResource SurfaceColor}" />
@@ -27,6 +29,8 @@
     <SolidColorBrush x:Key="Success" Color="{StaticResource SuccessColor}" />
     <SolidColorBrush x:Key="Warning" Color="{StaticResource WarningColor}" />
     <SolidColorBrush x:Key="SuccessSoft" Color="{StaticResource SuccessSoftColor}" />
+    <SolidColorBrush x:Key="WarningSoft" Color="{StaticResource WarningSoftColor}" />
+    <SolidColorBrush x:Key="DangerSoft" Color="{StaticResource DangerSoftColor}" />
     <SolidColorBrush x:Key="OnAccent" Color="{StaticResource OnAccentColor}" />
 
     <SolidColorBrush x:Key="ListViewItemBackground" Color="{StaticResource SurfaceColor}" />

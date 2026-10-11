@@ -7,7 +7,7 @@ public class MigratorTests
 {
     private static readonly string[] AllVersions =
     [
-        "001", "002", "003", "004", "005", "006", "007", "008", "009", "010", "011", "012", "013", "014", "015", "016",
+        "001", "002", "003", "004", "005", "006", "007", "008", "009", "010", "011", "012", "013", "014", "015", "016", "017",
     ];
 
     [Fact]
@@ -70,6 +70,7 @@ public class MigratorTests
                     "holiday",
                     "created_by",
                     "updated_by",
+                    "holiday_override",
                 ],
                 Columns(connection, "calculation_days"));
             Assert.Equal(
@@ -159,6 +160,7 @@ public class MigratorTests
                 VALUES ('dev-1', 'علی', 'رضایی', 8, '2026-10-07T16:30:00', '2026-10-07T16:30:00')
                 """;
             insert.ExecuteNonQuery();
+            Revert017(connection);
             Revert016(connection);
             Revert015(connection);
             Revert014(connection);
@@ -166,7 +168,7 @@ public class MigratorTests
             Revert012(connection);
         });
 
-        Assert.Equal(["012", "013", "014", "015", "016"], Migrator.Apply(db.DbFile));
+        Assert.Equal(["012", "013", "014", "015", "016", "017"], Migrator.Apply(db.DbFile));
 
         SqliteDatabase.Use(db.DbFile, connection =>
         {
@@ -194,6 +196,7 @@ public class MigratorTests
         Migrator.Apply(db.DbFile);
         SqliteDatabase.Use(db.DbFile, connection =>
         {
+            Revert017(connection);
             Revert016(connection);
             Revert015(connection);
             Revert014(connection);
@@ -201,8 +204,42 @@ public class MigratorTests
             Revert012(connection);
         });
 
-        Assert.Equal(["012", "013", "014", "015", "016"], Migrator.Apply(db.DbFile));
+        Assert.Equal(["012", "013", "014", "015", "016", "017"], Migrator.Apply(db.DbFile));
         Assert.Empty(Migrator.Apply(db.DbFile));
+    }
+
+    [Fact]
+    public void Migration017KeepsExplicitHolidayTicksSeparateFromDefaults()
+    {
+        using var db = new TempDatabase();
+        Migrator.Apply(db.DbFile);
+        SqliteDatabase.Use(db.DbFile, connection =>
+        {
+            Revert017(connection);
+            connection.Execute(
+                """
+                INSERT INTO calculation_days (remote_id, date, balance_minutes, holiday, created_at, updated_at)
+                VALUES
+                    ('dev-1', '2026-10-09', 0, 0, '2026-10-07T16:30:00', '2026-10-07T16:30:00'),
+                    ('dev-1', '2026-10-07', 0, 1, '2026-10-07T16:30:00', '2026-10-07T16:30:00'),
+                    ('dev-1', '2026-10-08', 0, 0, '2026-10-07T16:30:00', '2026-10-07T16:30:00')
+                """);
+        });
+
+        Assert.Equal(["017"], Migrator.Apply(db.DbFile));
+
+        IAttenRepository store = db.OpenStore();
+        IReadOnlyList<WorkBalance> rows = store.Calculation.ListBalances(
+            "dev-1",
+            new DateOnly(2026, 10, 7),
+            new DateOnly(2026, 10, 9));
+        Assert.Equal(
+            [
+                new WorkBalance("dev-1", "2026-10-07", 0, true, true),
+                new WorkBalance("dev-1", "2026-10-08", 0, false),
+                new WorkBalance("dev-1", "2026-10-09", 0, false, false),
+            ],
+            rows);
     }
 
     [Fact]
@@ -224,6 +261,7 @@ public class MigratorTests
         Assert.Contains(embedded, item => item.Version == "014" && item.FileName == "014_official_holidays.sql");
         Assert.Contains(embedded, item => item.Version == "015" && item.FileName == "015_leave_kinds.sql");
         Assert.Contains(embedded, item => item.Version == "016" && item.FileName == "016_leave_description.sql");
+        Assert.Contains(embedded, item => item.Version == "017" && item.FileName == "017_calculation_holiday_override.sql");
     }
 
     [Fact]
@@ -241,6 +279,12 @@ public class MigratorTests
             Assert.Equal(TimeSpan.Zero, parsed.Offset);
             Assert.True((DateTimeOffset.UtcNow - parsed).Duration() < TimeSpan.FromMinutes(1));
         });
+    }
+
+    private static void Revert017(SqliteConnection connection)
+    {
+        connection.Execute("DELETE FROM schema_migrations WHERE version = '017'");
+        connection.Execute("ALTER TABLE calculation_days DROP COLUMN holiday_override");
     }
 
     private static void Revert016(SqliteConnection connection)

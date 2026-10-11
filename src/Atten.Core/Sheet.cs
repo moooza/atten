@@ -39,6 +39,104 @@ public static class Sheet
         return $"{hour:00}:{minute:00}:{second:00}";
     }
 
+    /// <summary>
+    /// Slides this slot one cell toward later columns, up to the first empty
+    /// cell in that direction. The rest of the row is left alone. On an RTL
+    /// sheet that is a shift to the left. With no empty cell ahead, inserts
+    /// an empty here and EvenSlots adds a new pair. An already-empty slot is
+    /// unchanged.
+    /// </summary>
+    public static IReadOnlyList<string?> ShiftSlotsForward(IReadOnlyList<string?> slots, int from)
+    {
+        ArgumentNullException.ThrowIfNull(slots);
+        if (from < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(from));
+        }
+
+        var next = new List<string?>(slots);
+        while (next.Count <= from)
+        {
+            next.Add(null);
+        }
+
+        int gap = -1;
+        for (int index = from; index < next.Count; index++)
+        {
+            if (next[index] is null)
+            {
+                gap = index;
+                break;
+            }
+        }
+
+        if (gap == from)
+        {
+            return next;
+        }
+
+        if (gap < 0)
+        {
+            next.Insert(from, null);
+            return EvenSlots(next);
+        }
+
+        string? empty = next[gap];
+        for (int index = gap; index > from; index--)
+        {
+            next[index] = next[index - 1];
+        }
+
+        next[from] = empty;
+        return next;
+    }
+
+    /// <summary>
+    /// Slides this slot one cell toward earlier columns, up to the first
+    /// empty cell toward index zero. The rest of the row is left alone. On
+    /// an RTL sheet that is a shift to the right. With no empty cell in that
+    /// direction, or when this slot is already empty, the row is unchanged.
+    /// Filled neighbors are not swapped.
+    /// </summary>
+    public static IReadOnlyList<string?> ShiftSlotsBackward(IReadOnlyList<string?> slots, int from)
+    {
+        ArgumentNullException.ThrowIfNull(slots);
+        if (from < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(from));
+        }
+
+        var next = new List<string?>(slots);
+        while (next.Count <= from)
+        {
+            next.Add(null);
+        }
+
+        int gap = -1;
+        for (int index = from; index >= 0; index--)
+        {
+            if (next[index] is null)
+            {
+                gap = index;
+                break;
+            }
+        }
+
+        if (gap < 0 || gap == from)
+        {
+            return next;
+        }
+
+        string? empty = next[gap];
+        for (int index = gap; index < from; index++)
+        {
+            next[index] = next[index + 1];
+        }
+
+        next[from] = empty;
+        return next;
+    }
+
     public static string FormatBalance(int minutes)
     {
         string sign = minutes > 0 ? "+" : minutes < 0 ? "-" : "";
@@ -58,7 +156,8 @@ public static class Sheet
         IReadOnlyDictionary<string, IReadOnlyDictionary<int, string?>>? overrides,
         double dailyHours,
         IReadOnlyDictionary<string, bool>? holidays = null,
-        IEnumerable<LeaveSpan>? leaves = null)
+        IEnumerable<LeaveSpan>? leaves = null,
+        IReadOnlySet<string>? officialHolidays = null)
     {
         ArgumentNullException.ThrowIfNull(deviceRows);
 
@@ -82,7 +181,7 @@ public static class Sheet
         LeaveSpan[] recorded = leaves?.ToArray() ?? [];
         IReadOnlyDictionary<string, int> leaveCredit = Leave.SpreadLeaveMinutes(
             recorded,
-            day => IsHoliday(day, chosen));
+            day => IsHoliday(day, chosen, officialHolidays));
 
         var rows = new List<SheetRow>();
         for (DateOnly current = start; string.CompareOrdinal(Dates.StorageDate(current), endKey) <= 0; current = current.AddDays(1))
@@ -91,7 +190,7 @@ public static class Sheet
             string?[] slots = DaySlots(
                 device.GetValueOrDefault(key, []),
                 chosenOverrides.GetValueOrDefault(key));
-            bool holiday = IsHoliday(current, chosen);
+            bool holiday = IsHoliday(current, chosen, officialHolidays);
             int required = holiday ? 0 : expected;
             int worked = WorkedMinutes(slots);
             int credited = leaveCredit.GetValueOrDefault(key);
@@ -110,15 +209,29 @@ public static class Sheet
         return rows;
     }
 
-    private static bool IsHoliday(DateOnly day, IReadOnlyDictionary<string, bool> chosen)
+    private static bool IsHoliday(
+        DateOnly day,
+        IReadOnlyDictionary<string, bool> chosen,
+        IReadOnlySet<string>? official)
     {
         string key = Dates.StorageDate(day);
-        if (chosen.TryGetValue(key, out bool holiday))
+        bool? person = chosen.TryGetValue(key, out bool holiday) ? holiday : null;
+        return OfficialHoliday.IsHoliday(day, official, person);
+    }
+
+    private static List<string?> EvenSlots(List<string?> slots)
+    {
+        if (slots.Count < 2)
         {
-            return holiday;
+            slots.Add(null);
         }
 
-        return day.DayOfWeek == DayOfWeek.Friday;
+        if (slots.Count % 2 == 1)
+        {
+            slots.Add(null);
+        }
+
+        return slots;
     }
 
     private static bool OverlapsLeave(string dayKey, IReadOnlyList<LeaveSpan> leaves)
@@ -150,7 +263,19 @@ public static class Sheet
 
         if (overrides is { Count: > 0 })
         {
-            count = Math.Max(count, overrides.Keys.Max() + 1);
+            int lastValued = -1;
+            foreach ((int index, string? value) in overrides)
+            {
+                if (value is not null)
+                {
+                    lastValued = Math.Max(lastValued, index);
+                }
+            }
+
+            if (lastValued >= 0)
+            {
+                count = Math.Max(count, lastValued + 1);
+            }
         }
 
         if (count % 2 == 1)
@@ -190,7 +315,22 @@ public static class Sheet
             return true;
         }
 
-        for (int index = 0; index < slots.Count; index += 2)
+        int last = -1;
+        for (int index = 0; index < slots.Count; index++)
+        {
+            if (!string.IsNullOrEmpty(slots[index]))
+            {
+                last = index;
+            }
+        }
+
+        if (last < 0)
+        {
+            return true;
+        }
+
+        int limit = (last + 2) & ~1;
+        for (int index = 0; index < limit; index += 2)
         {
             string? entry = slots[index];
             string? exitTime = index + 1 < slots.Count ? slots[index + 1] : null;

@@ -56,7 +56,7 @@ internal static class SheetLayout
     public const double HolidayWidth = 88;
     public const double WeekdayWidth = 80;
     public const double DateWidth = 120;
-    public const double PunchWidth = 100;
+    public const double PunchWidth = 160;
     public const double BalanceWidth = 120;
     public const double LeaveWidth = 180;
     public const double ActionsWidth = 220;
@@ -69,7 +69,7 @@ internal static class SheetLayout
             count = Math.Max(count, row.Slots.Count);
         }
 
-        return count;
+        return Math.Max(2, count);
     }
 
     public static string PunchTitle(int slot)

@@ -381,10 +381,15 @@ public class RepositoryTests : IDisposable
 
         Assert.Equal(
             [
-                new WorkBalance("dev-1", "2026-10-08", -120, true),
-                new WorkBalance("dev-1", "2026-10-09", 0, true),
+                new WorkBalance("dev-1", "2026-10-08", -120, true, true),
+                new WorkBalance("dev-1", "2026-10-09", 0, true, true),
             ],
             store.Calculation.ListBalances("dev-1", new DateOnly(2026, 10, 8), new DateOnly(2026, 10, 9)));
+
+        store.Calculation.SaveBalances("dev-1", [(new DateOnly(2026, 10, 8), 15, false)]);
+        Assert.Equal(
+            new WorkBalance("dev-1", "2026-10-08", 15, false, true),
+            store.Calculation.ListBalances("dev-1", new DateOnly(2026, 10, 8), new DateOnly(2026, 10, 8)).Single());
     }
 
     [Fact]

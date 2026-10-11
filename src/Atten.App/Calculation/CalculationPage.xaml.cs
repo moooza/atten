@@ -1,6 +1,7 @@
+using Atten.App.Leaves;
+using Atten.App.Shared;
 using Atten.Core;
 using Atten.Data;
-using Atten.App.Leaves;
 using Atten.UI.Theme;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -15,6 +16,7 @@ public sealed partial class CalculationPage : Page
     private readonly IClockEventRepository? _clocks;
     private readonly ICalculationRepository? _store;
     private readonly ILeaveRepository? _leaves;
+    private readonly IOfficialHolidayRepository? _official;
     private readonly Dictionary<string, SheetRow> _rows = new(StringComparer.Ordinal);
     private string? _remoteId;
     private long? _personnelId;
@@ -24,15 +26,23 @@ public sealed partial class CalculationPage : Page
     private readonly List<SheetDayRowView> _views = [];
     private FormWindow? _editorWindow;
     private LeaveForm? _editor;
+    private EventHandler<object>? _restoreScroll;
+    private int _punchCount;
+    private int _scrollTries;
+    private double _restoreHorizontal;
+    private double _restoreVertical;
+    private double _restoreExtentHeight;
 
     public CalculationPage()
     {
         InitializeComponent();
+        ApplyDefaultDates();
         IAttenRepository? appStore = App.Current.Store;
         _people = appStore?.Personnel;
         _clocks = appStore?.ClockEvents;
         _store = appStore?.Calculation;
         _leaves = appStore?.Leaves;
+        _official = appStore?.OfficialHolidays;
         PersonPicker.Source = _people;
         PersonPicker.SelectionChanged += (_, _) => ShowIfReady();
         PersonPicker.LoadFailed += (_, _) =>
@@ -50,7 +60,19 @@ public sealed partial class CalculationPage : Page
                 Notice.Text = PersonPicker.Error;
             }
         };
-        Unloaded += (_, _) => _editorWindow?.Close();
+        Unloaded += (_, _) =>
+        {
+            CancelScrollRestore();
+            _editorWindow?.Close();
+        };
+    }
+
+    private void ApplyDefaultDates()
+    {
+        DateOnly today = DateOnly.FromDateTime(DateTime.Today);
+        var (year, month, _) = Dates.ShamsiYmd(today);
+        StartField.GregorianDate = Dates.ShamsiMonthSpan(year, month).Start;
+        EndField.GregorianDate = today;
     }
 
     private void OnShow(object sender, RoutedEventArgs args)
@@ -81,11 +103,7 @@ public sealed partial class CalculationPage : Page
 
     private void ShowResult()
     {
-        if (CommitPending())
-        {
-            return;
-        }
-
+        DismissEdits();
         Notice.Text = string.Empty;
         try
         {
@@ -121,7 +139,7 @@ public sealed partial class CalculationPage : Page
 
     private void ToggleHoliday(string storedDate)
     {
-        CommitPending();
+        DismissEdits();
         if (!TryContext(storedDate, out SheetRow row) || _remoteId is null)
         {
             return;
@@ -141,11 +159,7 @@ public sealed partial class CalculationPage : Page
 
     private async void ResetDay(string storedDate)
     {
-        if (CommitPending())
-        {
-            return;
-        }
-
+        DismissEdits();
         if (!TryContext(storedDate, out _) || _remoteId is null)
         {
             return;
@@ -170,11 +184,7 @@ public sealed partial class CalculationPage : Page
 
     private void AddLeave(string storedDate)
     {
-        if (CommitPending())
-        {
-            return;
-        }
-
+        DismissEdits();
         if (!TryContext(storedDate, out SheetRow row) || row.BalanceMinutes >= 0 || _personnelId is null)
         {
             return;
@@ -257,6 +267,37 @@ public sealed partial class CalculationPage : Page
         }
     }
 
+    private void SaveSlots(string storedDate, IReadOnlyList<string?> slots)
+    {
+        if (_remoteId is null || _personnelId is null || _dailyHours is null || _start is null || _end is null)
+        {
+            Notice.Text = AppMessages.ChoosePersonnel;
+            return;
+        }
+
+        try
+        {
+            DateOnly day = Day(storedDate);
+            int previous = _rows.TryGetValue(storedDate, out SheetRow? row) ? row.Slots.Count : 0;
+            int count = Math.Max(slots.Count, previous);
+            for (int slot = 0; slot < count; slot++)
+            {
+                _store!.SavePunch(_remoteId, day, slot, slot < slots.Count ? slots[slot] : null);
+            }
+
+            Render(ReloadCurrent());
+            Notice.Text = string.Empty;
+        }
+        catch (Exception ex) when (ex is ArgumentException or FormatException)
+        {
+            Notice.Text = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            Notice.Text = $"{AppMessages.CalculationTimeFailed}: {ex.Message}";
+        }
+    }
+
     private IReadOnlyList<SheetRow> LoadRows(
         string remoteId,
         double dailyHours,
@@ -272,8 +313,11 @@ public sealed partial class CalculationPage : Page
         IReadOnlyList<DeviceDay> device = _clocks.ListDaily(remoteId, start, end);
         IReadOnlyDictionary<string, IReadOnlyDictionary<int, string?>> overrides =
             _store.ListPunches(remoteId, start, end);
+        IReadOnlySet<string> official = OfficialHoliday.Catalog(
+            (_official?.List(start, end) ?? []).Select(row => row.Date));
         Dictionary<string, bool> holidays = _store.ListBalances(remoteId, start, end)
-            .ToDictionary(row => row.Date, row => row.Holiday, StringComparer.Ordinal);
+            .Where(row => row.HolidayOverride is not null)
+            .ToDictionary(row => row.Date, row => row.HolidayOverride!.Value, StringComparer.Ordinal);
         IReadOnlyList<LeaveSpan> leaves = _leaves.List(personnelId, start, end)
             .Where(row => row.Kind == Leave.KindLeave)
             .Select(row => new LeaveSpan(Day(row.StartDate), Day(row.EndDate), row.Minutes))
@@ -285,7 +329,8 @@ public sealed partial class CalculationPage : Page
             overrides,
             dailyHours,
             holidays,
-            leaves);
+            leaves,
+            official);
         _store.SaveBalances(
             remoteId,
             rows.Select(row => (Day(row.Date), row.BalanceMinutes, row.Holiday)));
@@ -299,14 +344,6 @@ public sealed partial class CalculationPage : Page
 
     private void Render(IReadOnlyList<SheetRow> rows)
     {
-        _views.Clear();
-        SheetHost.Children.Clear();
-        _rows.Clear();
-        foreach (SheetRow row in rows)
-        {
-            _rows[row.Date] = row;
-        }
-
         if (rows.Count == 0)
         {
             ShowEmpty(AppMessages.CalculationChooseRange);
@@ -314,15 +351,23 @@ public sealed partial class CalculationPage : Page
         }
 
         int punchCount = SheetLayout.PunchCount(rows);
-        SheetHost.Children.Add(BuildHeader(punchCount));
-        var callbacks = new SheetDayCallbacks
+        if (TryBindRows(rows, punchCount))
         {
-            ToggleHoliday = ToggleHoliday,
-            SaveSlot = SaveSlot,
-            ResetDay = ResetDay,
-            AddLeave = AddLeave,
-            CommitOthers = CommitOthers,
-        };
+            return;
+        }
+
+        double horizontal = BodyScroll.HorizontalOffset;
+        double vertical = BodyScroll.VerticalOffset;
+        double extentHeight = BodyScroll.ExtentHeight;
+        bool keepScroll = TablePanel.Visibility == Visibility.Visible;
+        CancelScrollRestore();
+        _views.Clear();
+        HeaderHost.Child = null;
+        SheetHost.Children.Clear();
+        RememberRows(rows);
+
+        HeaderHost.Child = BuildHeader(punchCount);
+        SheetDayCallbacks callbacks = DayCallbacks();
         foreach (SheetRow row in rows)
         {
             var view = new SheetDayRowView(new SheetDayRow(row, punchCount), punchCount, callbacks);
@@ -330,8 +375,105 @@ public sealed partial class CalculationPage : Page
             SheetHost.Children.Add(view);
         }
 
+        _punchCount = punchCount;
         EmptyText.Visibility = Visibility.Collapsed;
         TablePanel.Visibility = Visibility.Visible;
+        if (keepScroll)
+        {
+            RestoreSheetScroll(horizontal, vertical, extentHeight);
+        }
+    }
+
+    private bool TryBindRows(IReadOnlyList<SheetRow> rows, int punchCount)
+    {
+        if (TablePanel.Visibility != Visibility.Visible
+            || punchCount != _punchCount
+            || rows.Count != _views.Count)
+        {
+            return false;
+        }
+
+        for (int index = 0; index < rows.Count; index++)
+        {
+            if (!string.Equals(rows[index].Date, _views[index].DateKey, StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        RememberRows(rows);
+        for (int index = 0; index < rows.Count; index++)
+        {
+            _views[index].Bind(new SheetDayRow(rows[index], punchCount));
+        }
+
+        return true;
+    }
+
+    private void RememberRows(IReadOnlyList<SheetRow> rows)
+    {
+        _rows.Clear();
+        foreach (SheetRow row in rows)
+        {
+            _rows[row.Date] = row;
+        }
+    }
+
+    private SheetDayCallbacks DayCallbacks()
+    {
+        return new SheetDayCallbacks
+        {
+            ToggleHoliday = ToggleHoliday,
+            SaveSlot = SaveSlot,
+            SaveSlots = SaveSlots,
+            ShowNotice = message => Notice.Text = message,
+            ResetDay = ResetDay,
+            AddLeave = AddLeave,
+            DismissOthers = DismissOthers,
+        };
+    }
+
+    private void RestoreSheetScroll(double horizontal, double vertical, double previousHeight)
+    {
+        _restoreHorizontal = horizontal;
+        _restoreVertical = vertical;
+        _restoreExtentHeight = previousHeight;
+        _scrollTries = 0;
+        _restoreScroll = OnRestoreSheetLayout;
+        BodyScroll.LayoutUpdated += _restoreScroll;
+        DispatcherQueue.TryEnqueue(() => OnRestoreSheetLayout(null, EventArgs.Empty));
+    }
+
+    private void OnRestoreSheetLayout(object? sender, object args)
+    {
+        _scrollTries += 1;
+        bool tallEnough = BodyScroll.ExtentHeight >= _restoreVertical
+            && (BodyScroll.ExtentHeight >= _restoreExtentHeight * 0.85 || _scrollTries >= 8);
+        if (!tallEnough && _scrollTries < 24)
+        {
+            return;
+        }
+
+        BodyScroll.ChangeView(_restoreHorizontal, _restoreVertical, zoomFactor: null, disableAnimation: true);
+        HeaderScroll.ChangeView(_restoreHorizontal, 0, zoomFactor: null, disableAnimation: true);
+        bool placed = Math.Abs(BodyScroll.VerticalOffset - _restoreVertical) < 2
+            && Math.Abs(BodyScroll.HorizontalOffset - _restoreHorizontal) < 2;
+        if (placed || _scrollTries >= 24)
+        {
+            CancelScrollRestore();
+        }
+    }
+
+    private void CancelScrollRestore()
+    {
+        if (_restoreScroll is null)
+        {
+            return;
+        }
+
+        BodyScroll.LayoutUpdated -= _restoreScroll;
+        _restoreScroll = null;
+        _scrollTries = 0;
     }
 
     private FrameworkElement BuildHeader(int punchCount)
@@ -349,15 +491,12 @@ public sealed partial class CalculationPage : Page
         PlaceHeader(header, "کسری / اضافه", SheetLayout.BalanceColumn(punchCount));
         PlaceHeader(header, "مرخصی", SheetLayout.LeaveColumn(punchCount));
         PlaceHeader(header, "عملیات", SheetLayout.ActionsColumn(punchCount));
-        var block = new StackPanel();
-        block.Children.Add(header);
-        block.Children.Add(new Border
-        {
-            Height = 1,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Background = Theme.Brush(this, Tokens.Line),
-        });
-        return block;
+        return header;
+    }
+
+    private void OnSheetScroll(object sender, ScrollViewerViewChangedEventArgs args)
+    {
+        HeaderScroll.ChangeView(BodyScroll.HorizontalOffset, 0, null, disableAnimation: true);
     }
 
     private static void PlaceHeader(Grid header, string title, int column)
@@ -370,7 +509,10 @@ public sealed partial class CalculationPage : Page
 
     private void ShowEmpty(string message)
     {
+        CancelScrollRestore();
         _views.Clear();
+        _punchCount = 0;
+        HeaderHost.Child = null;
         SheetHost.Children.Clear();
         _rows.Clear();
         EmptyText.Text = message;
@@ -378,22 +520,20 @@ public sealed partial class CalculationPage : Page
         TablePanel.Visibility = Visibility.Collapsed;
     }
 
-    private bool CommitPending()
+    private void DismissEdits()
     {
-        return CommitOthers(except: null);
+        DismissOthers(except: null);
     }
 
-    private bool CommitOthers(SheetDayRowView? except)
+    private void DismissOthers(SheetDayRowView? except)
     {
         foreach (SheetDayRowView view in _views)
         {
-            if (!ReferenceEquals(view, except) && view.CommitEdit())
+            if (!ReferenceEquals(view, except))
             {
-                return true;
+                view.CancelEdit();
             }
         }
-
-        return false;
     }
 
     private bool TryContext(string storedDate, out SheetRow row)
@@ -408,20 +548,25 @@ public sealed partial class CalculationPage : Page
             && _rows.TryGetValue(storedDate, out row!);
     }
 
-    private async Task<bool> ConfirmReset(string shamsiDate)
+    private Task<bool> ConfirmReset(string shamsiDate)
     {
-        var dialog = new ContentDialog
-        {
-            Title = AppMessages.CalculationResetTitle,
-            Content = AppMessages.CalculationResetPrompt(shamsiDate),
-            PrimaryButtonText = AppMessages.CalculationReset,
-            CloseButtonText = "انصراف",
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = XamlRoot,
-            FlowDirection = FlowDirection.RightToLeft,
-        };
-        ContentDialogResult result = await dialog.ShowAsync();
-        return result == ContentDialogResult.Primary;
+        string person = PersonPicker.SelectedPerson is PersonnelRecord chosen
+            ? PersonnelPicker.FormatLabel(chosen)
+            : AppMessages.ChoosePersonnel;
+        return AppConfirmDialog.ShowAsync(
+            XamlRoot,
+            ActualTheme,
+            new AppConfirmRequest
+            {
+                Title = AppMessages.CalculationResetTitle,
+                Ask = AppMessages.CalculationResetAsk,
+                Lines =
+                [
+                    new AppConfirmLine("کارمند: ", person),
+                    new AppConfirmLine("تاریخ: ", shamsiDate),
+                ],
+                ConfirmText = AppMessages.CalculationReset,
+            });
     }
 
     private static DateOnly RequiredDate(ShamsiDateField field, string empty)
