@@ -3,7 +3,6 @@ using Atten.App.Calculation;
 using Atten.App.ClockEvents;
 using Atten.App.Dashboard;
 using Atten.App.Leaves;
-using Atten.App.Payroll;
 using Atten.App.Personnel;
 
 namespace Atten.App;
@@ -42,12 +41,6 @@ public static class ShellDestinations
         "\uE8EF",
         typeof(CalculationPage));
 
-    public static readonly ShellDestination Payroll = new(
-        "payroll",
-        "حقوق",
-        "\uE8D4",
-        typeof(PayrollPage));
-
     public static readonly ShellDestination Backup = new(
         "backup",
         "پشتیبان",
@@ -61,7 +54,6 @@ public static class ShellDestinations
         ClockEvents,
         Leaves,
         Calculation,
-        Payroll,
         Backup,
     ];
 }

@@ -167,29 +167,6 @@ public static class AppMessages
 
     public const string CalculationReset = "بازنشانی";
 
-    public const string PayrollTitle = "حقوق";
-
-    public const string PayrollHint =
-        "محاسبه از کارکرد ماه و مانده مرخصی ساخته می‌شود. تأیید، پیش‌نویس را برای همین کاربر قفل می‌کند.";
-
-    public const string PayrollListFailed = "خواندن حقوق ممکن نشد";
-
-    public const string PayrollEmpty = "برای این پرسنل حقوق ثبت نشده است.";
-
-    public const string PayrollSelectOne = "یک حقوق را از لیست انتخاب کنید.";
-
-    public const string PayrollNeedPeriod = "سال و ماه را انتخاب کنید.";
-
-    public const string PayrollDraft = "محاسبه پیش‌نویس";
-
-    public const string PayrollConfirm = "تأیید";
-
-    public const string PayrollReopen = "بازگشت به پیش‌نویس";
-
-    public const string PayrollConfirmed = "حقوق تأیید شد.";
-
-    public const string PayrollReopened = "حقوق به پیش‌نویس برگشت.";
-
     public const string AdvancedSettings = "تنظیمات پیشرفته";
 
     public const string DashboardHolidayMissing = "تعطیلات رسمی امسال اضافه نشده است.";
@@ -266,11 +243,6 @@ public static class AppMessages
     }
 
     public static string LeaveCount(int count)
-    {
-        return $"{count} مورد";
-    }
-
-    public static string PayrollCount(int count)
     {
         return $"{count} مورد";
     }

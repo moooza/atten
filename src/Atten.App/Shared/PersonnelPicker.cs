@@ -7,7 +7,7 @@ using Microsoft.UI.Xaml.Media;
 namespace Atten.App.Shared;
 
 /// <summary>
-/// Loads personnel through the repository. Leave, calculation, and payroll
+/// Loads personnel through the repository. Leave and calculation
 /// use this control; they do not open the Personnel window.
 /// </summary>
 public sealed class PersonnelPicker : UserControl
