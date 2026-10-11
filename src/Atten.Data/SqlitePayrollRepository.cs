@@ -231,17 +231,40 @@ internal sealed class SqlitePayrollRepository : IPayrollRepository
             SELECT COALESCE(SUM(minutes), 0)
             FROM leaves
             WHERE personnel_id = $personnel_id AND start_date >= $start AND start_date <= $end
+              AND kind = $kind
             """;
         leave.Parameters.AddWithValue("$personnel_id", person.Id);
         leave.Parameters.AddWithValue("$start", start);
         leave.Parameters.AddWithValue("$end", end);
+        leave.Parameters.AddWithValue("$kind", Leave.KindLeave);
         int leaveMinutes = Convert.ToInt32(leave.ExecuteScalar(), System.Globalization.CultureInfo.InvariantCulture);
         int remaining = Leave.RemainingLeaveMinutes(
             Leave.ShamsiYearOf(startDate),
             person.CooperationStart,
             person.CooperationEnd,
-            UsedLeaveMinutesByYear(connection, person.Id));
+            UsedLeaveMinutesByYear(connection, person.Id),
+            CarryMinutesByYear(connection, person.Id));
         return Payroll.Summarize(balances, leaveMinutes, remaining);
+    }
+
+    private static Dictionary<int, int> CarryMinutesByYear(SqliteConnection connection, long personId)
+    {
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText =
+            """
+            SELECT year, carry_minutes
+            FROM leave_year_transfers
+            WHERE personnel_id = $personnel_id
+            """;
+        command.Parameters.AddWithValue("$personnel_id", personId);
+        using SqliteDataReader reader = command.ExecuteReader();
+        var caps = new Dictionary<int, int>();
+        while (reader.Read())
+        {
+            caps[(int)reader.GetInt64(0)] = (int)reader.GetInt64(1);
+        }
+
+        return caps;
     }
 
     private static Dictionary<int, int> UsedLeaveMinutesByYear(SqliteConnection connection, long personId)

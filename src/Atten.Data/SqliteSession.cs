@@ -91,6 +91,14 @@ internal static class RepositoryGuard
     public const string ChoosePerson = "یک پرسنل را انتخاب کنید.";
     public const string ChooseLeave = "یک مرخصی را انتخاب کنید.";
     public const string LeaveAmount = "میزان مرخصی را وارد کنید.";
+    public const string LeaveNoWorkingDays = "این بازه روز کاری ندارد";
+    public const string LeaveOverlapsWorkingDay = "این بازه با مرخصی دیگری روز کاری مشترک دارد";
+    public const string InvalidYear = "سال معتبر نیست.";
+    public const string LeaveLeftoverNone = Leave.LeftoverNone;
+    public const string LeaveCarryNone = Leave.LeftoverNeedAmount;
+    public const string LeaveLeftoverOpenYear = Leave.LeftoverOpenYear;
+    public const string LeaveCarryClosingYear = Leave.LeftoverClosingNoTransfer;
+    public const string LeaveSettlementEdit = "تسویه را نمی‌توان ویرایش کرد.";
     public const string PersonnelSave = "ذخیره پرسنل ممکن نشد.";
     public const string LeaveSave = "ثبت مرخصی ممکن نشد.";
     public const string LeaveDelete = "حذف مرخصی ممکن نشد.";
@@ -122,6 +130,16 @@ internal static class RepositoryGuard
         if (value <= 0)
         {
             throw new ArgumentException(ChooseLeave);
+        }
+
+        return value;
+    }
+
+    public static int LeaveYear(int value)
+    {
+        if (value <= 0)
+        {
+            throw new ArgumentException(InvalidYear);
         }
 
         return value;

@@ -418,7 +418,11 @@ public class RepositoryTests : IDisposable
             store.Leaves.List(personId, Dates.ParseShamsiDate("1405/07/01"), Dates.ParseShamsiDate("1405/07/10")));
 
         ArgumentException over = Assert.Throws<ArgumentException>(
-            () => store.Leaves.Add(personId, current, current, Leave.YearlyLeaveMinutes + Leave.CarryLeaveMinutes));
+            () => store.Leaves.Add(
+                personId,
+                Dates.ParseShamsiDate("1405/06/16"),
+                Dates.ParseShamsiDate("1405/06/16"),
+                Leave.YearlyLeaveMinutes + Leave.CarryLeaveMinutes));
         Assert.Contains("بیشتر است", over.Message, StringComparison.Ordinal);
 
         ArgumentException range = Assert.Throws<ArgumentException>(
@@ -433,6 +437,34 @@ public class RepositoryTests : IDisposable
         Assert.Equal([30], store.Leaves.List(personId).Select(row => row.Minutes));
         ArgumentException gone = Assert.Throws<ArgumentException>(() => store.Leaves.Delete(leaveId));
         Assert.Contains("وجود ندارد", gone.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LeaveStoresOptionalDescription()
+    {
+        using var db = new TempDatabase();
+        IAttenRepository store = db.OpenStore();
+        DateOnly day = Dates.ParseShamsiDate("1405/06/15");
+        DateOnly next = Dates.ParseShamsiDate("1405/06/16");
+        long personId = store.Personnel.Add(
+            "علی",
+            "رضایی",
+            8,
+            remoteId: "dev-1",
+            cooperationStart: Dates.ParseShamsiDate("1404/01/01"));
+        long leaveId = store.Leaves.Add(personId, day, day, 30, "  مرخصی استعلاجی  ");
+
+        LeaveRecord saved = Assert.Single(store.Leaves.List(personId));
+        Assert.Equal(leaveId, saved.Id);
+        Assert.Equal("مرخصی استعلاجی", saved.Description);
+
+        store.Leaves.Update(leaveId, personId, next, next, 45, "سفر کاری");
+        LeaveRecord updated = Assert.Single(store.Leaves.List(personId));
+        Assert.Equal("سفر کاری", updated.Description);
+        Assert.Equal(45, updated.Minutes);
+
+        store.Leaves.Update(leaveId, personId, next, next, 45, "   ");
+        Assert.Null(Assert.Single(store.Leaves.List(personId)).Description);
     }
 
     [Fact]
@@ -454,7 +486,8 @@ public class RepositoryTests : IDisposable
             cooperationStart: oneDay,
             cooperationEnd: oneDay);
         store.Leaves.Add(partial, oneDay, oneDay, 35);
-        ArgumentException used = Assert.Throws<ArgumentException>(() => store.Leaves.Add(partial, oneDay, oneDay, 1));
+        DateOnly nextDay = Dates.ParseShamsiDate("1405/01/02");
+        ArgumentException used = Assert.Throws<ArgumentException>(() => store.Leaves.Add(partial, nextDay, nextDay, 1));
         Assert.Contains("باقی‌مانده: 0 روز و 0 ساعت و 0 دقیقه", used.Message, StringComparison.Ordinal);
 
         long carried = store.Personnel.Add(
@@ -465,7 +498,8 @@ public class RepositoryTests : IDisposable
             cooperationStart: Dates.ParseShamsiDate("1404/01/01"));
         int allowance = Leave.YearlyLeaveMinutes + Leave.CarryLeaveMinutes;
         long leaveId = store.Leaves.Add(carried, day, day, allowance);
-        Assert.Throws<ArgumentException>(() => store.Leaves.Add(carried, day, day, 1));
+        DateOnly next = Dates.ParseShamsiDate("1405/06/16");
+        Assert.Throws<ArgumentException>(() => store.Leaves.Add(carried, next, next, 1));
         store.Leaves.Update(leaveId, carried, day, day, allowance);
         Assert.Throws<ArgumentException>(() => store.Leaves.Update(leaveId, carried, day, day, allowance + 1));
         DateOnly before = Dates.ParseShamsiDate("1403/06/15");
@@ -483,6 +517,167 @@ public class RepositoryTests : IDisposable
             cooperationEnd: Dates.ParseShamsiDate("1402/12/29"));
         ArgumentException gap = Assert.Throws<ArgumentException>(() => store.Leaves.Add(gapped, day, day, 1));
         Assert.Contains("باقی‌مانده: 0 روز و 0 ساعت و 0 دقیقه", gap.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SavingLeaveRejectsARangeWithNoWorkingDays()
+    {
+        using var db = new TempDatabase();
+        IAttenRepository store = db.OpenStore();
+        DateOnly wednesday = Dates.ParseShamsiDate("1405/07/15");
+        DateOnly thursday = Dates.ParseShamsiDate("1405/07/16");
+        DateOnly friday = Dates.ParseShamsiDate("1405/07/17");
+        long personId = store.Personnel.Add(
+            "علی",
+            "رضایی",
+            8,
+            remoteId: "dev-1",
+            cooperationStart: Dates.ParseShamsiDate("1404/01/01"));
+
+        ArgumentException fridayOnly = Assert.Throws<ArgumentException>(
+            () => store.Leaves.Add(personId, friday, friday, 30));
+        Assert.Contains("روز کاری ندارد", fridayOnly.Message, StringComparison.Ordinal);
+
+        store.OfficialHolidays.Add(thursday, "تعطیل رسمی");
+        ArgumentException holidays = Assert.Throws<ArgumentException>(
+            () => store.Leaves.Add(personId, thursday, friday, 30));
+        Assert.Contains("روز کاری ندارد", holidays.Message, StringComparison.Ordinal);
+
+        long leaveId = store.Leaves.Add(personId, wednesday, friday, Leave.LeaveDayMinutes);
+        ArgumentException update = Assert.Throws<ArgumentException>(
+            () => store.Leaves.Update(leaveId, personId, friday, friday, 30));
+        Assert.Contains("روز کاری ندارد", update.Message, StringComparison.Ordinal);
+        Assert.Equal(Leave.LeaveDayMinutes, store.Leaves.List(personId).Single().Minutes);
+    }
+
+    [Fact]
+    public void SavingLeaveRejectsASharedWorkingDay()
+    {
+        using var db = new TempDatabase();
+        IAttenRepository store = db.OpenStore();
+        DateOnly wednesday = Dates.ParseShamsiDate("1405/07/15");
+        DateOnly thursday = Dates.ParseShamsiDate("1405/07/16");
+        DateOnly friday = Dates.ParseShamsiDate("1405/07/17");
+        DateOnly saturday = Dates.ParseShamsiDate("1405/07/18");
+        long personId = store.Personnel.Add(
+            "علی",
+            "رضایی",
+            8,
+            remoteId: "dev-1",
+            cooperationStart: Dates.ParseShamsiDate("1404/01/01"));
+
+        long first = store.Leaves.Add(personId, wednesday, wednesday, 30);
+        ArgumentException hourly = Assert.Throws<ArgumentException>(
+            () => store.Leaves.Add(personId, wednesday, wednesday, 45));
+        Assert.Contains("روز کاری مشترک", hourly.Message, StringComparison.Ordinal);
+
+        store.Leaves.Update(first, personId, wednesday, wednesday, 40);
+        store.Leaves.Update(first, personId, wednesday, friday, Leave.LeaveDayMinutes);
+        long second = store.Leaves.Add(personId, friday, saturday, 30);
+        Assert.Equal([first, second], store.Leaves.List(personId).Select(row => row.Id));
+
+        ArgumentException update = Assert.Throws<ArgumentException>(
+            () => store.Leaves.Update(first, personId, wednesday, saturday, Leave.LeaveDayMinutes));
+        Assert.Contains("روز کاری مشترک", update.Message, StringComparison.Ordinal);
+
+        store.OfficialHolidays.Add(thursday, "تعطیل رسمی");
+        store.Leaves.Delete(second);
+        store.Leaves.Update(first, personId, wednesday, thursday, 30);
+        long afterHoliday = store.Leaves.Add(personId, thursday, saturday, 30);
+        Assert.Equal(afterHoliday, store.Leaves.List(personId)[^1].Id);
+    }
+
+    [Fact]
+    public void LeftoverActionsAllocateTransferAndSettlementSeparately()
+    {
+        using var db = new TempDatabase();
+        IAttenRepository store = db.OpenStore();
+        DateOnly started = Dates.ParseShamsiDate("1403/01/01");
+        long settledId = store.Personnel.Add("علی", "رضایی", 8, remoteId: "dev-1", cooperationStart: started);
+        long carriedId = store.Personnel.Add("مریم", "احمدی", 8, remoteId: "dev-2", cooperationStart: started);
+        int current = Leave.ShamsiYearOf(DateOnly.FromDateTime(DateTime.Today));
+        int past = current - 1;
+        int leftoverAfterDefault = Leave.YearlyLeaveMinutes;
+        int fullRemaining = Leave.YearlyLeaveMinutes + Leave.CarryLeaveMinutes;
+
+        ArgumentException open = Assert.Throws<ArgumentException>(
+            () => store.Leaves.ApplyLeftover(settledId, current, 0, leftoverAfterDefault));
+        Assert.Contains("باز است", open.Message, StringComparison.Ordinal);
+        Assert.Throws<ArgumentException>(() => store.Leaves.ApplyLeftover(carriedId, current, fullRemaining, 0));
+
+        long closedId = store.Personnel.Add(
+            "نادر",
+            "موسوی",
+            8,
+            remoteId: "dev-3",
+            cooperationStart: started,
+            cooperationEnd: Leave.ShamsiYearSpan(past).End);
+        ArgumentException closing = Assert.Throws<ArgumentException>(
+            () => store.Leaves.ApplyLeftover(closedId, past, 30, 0));
+        Assert.Contains("قطع همکاری", closing.Message, StringComparison.Ordinal);
+        ArgumentException over = Assert.Throws<ArgumentException>(
+            () => store.Leaves.ApplyLeftover(settledId, past, fullRemaining, leftoverAfterDefault));
+        Assert.Contains("بیشتر است", over.Message, StringComparison.Ordinal);
+
+        store.Leaves.ApplyLeftover(settledId, past, 0, leftoverAfterDefault);
+        LeaveRecord settlement = Assert.Single(store.Leaves.List(settledId), row => row.Kind == Leave.KindSettlement);
+        DateOnly lastDay = Leave.ShamsiYearSpan(past).End;
+        Assert.Equal(Dates.StorageDate(lastDay), settlement.StartDate);
+        Assert.Equal(settlement.StartDate, settlement.EndDate);
+        Assert.Equal(leftoverAfterDefault, settlement.Minutes);
+        Assert.Empty(store.Leaves.CarryMinutesByYear(settledId));
+
+        var (esfandStart, esfandEnd) = Payroll.MonthSpan(past, 12);
+        PayrollRunRecord settledRun = store.Payroll.Draft(settledId, esfandStart, esfandEnd);
+        Assert.Equal(0, settledRun.LeaveMinutes);
+        Assert.Equal(Leave.CarryLeaveMinutes, settledRun.RemainingLeaveMinutes);
+
+        IReadOnlyList<LeaveSpan> leaveSpans = store.Leaves.List(settledId, lastDay, lastDay)
+            .Where(row => row.Kind == Leave.KindLeave)
+            .Select(row => new LeaveSpan(
+                Leave.OptionalDate(row.StartDate)!.Value,
+                Leave.OptionalDate(row.EndDate)!.Value,
+                row.Minutes))
+            .ToList();
+        Assert.Empty(leaveSpans);
+        SheetRow lastRow = Assert.Single(Sheet.BuildSheet(lastDay, lastDay, [], null, 8, leaves: leaveSpans));
+        Assert.False(lastRow.OnLeave);
+        Assert.Equal(0, lastRow.LeaveMinutes);
+
+        store.Leaves.ApplyLeftover(carriedId, past, fullRemaining, 0);
+        Assert.Equal(fullRemaining, store.Leaves.CarryMinutesByYear(carriedId)[past]);
+        var (nextStart, nextEnd) = Payroll.MonthSpan(current, 6);
+        PayrollRunRecord carriedRun = store.Payroll.Draft(carriedId, nextStart, nextEnd);
+        Assert.Equal(0, carriedRun.LeaveMinutes);
+        Assert.Equal(
+            (2 * Leave.YearlyLeaveMinutes) + Leave.CarryLeaveMinutes,
+            carriedRun.RemainingLeaveMinutes);
+
+        DateOnly nextYearDay = Dates.ParseShamsiDate($"{current}/06/15");
+        long extra = store.Leaves.Add(
+            carriedId,
+            nextYearDay,
+            nextYearDay,
+            Leave.YearlyLeaveMinutes + Leave.YearlyLeaveMinutes);
+        Assert.True(extra > 0);
+        Assert.Throws<ArgumentException>(
+            () => store.Leaves.Add(
+                settledId,
+                nextYearDay,
+                nextYearDay,
+                Leave.YearlyLeaveMinutes + Leave.YearlyLeaveMinutes));
+
+        store.Leaves.ApplyLeftover(closedId, past, 0, fullRemaining);
+        LeaveRecord closedSettlement = Assert.Single(
+            store.Leaves.List(closedId),
+            row => row.Kind == Leave.KindSettlement);
+        Assert.Equal(fullRemaining, closedSettlement.Minutes);
+
+        long splitId = store.Personnel.Add("سارا", "کریمی", 8, remoteId: "dev-4", cooperationStart: started);
+        int halfDay = Leave.LeaveDayMinutes * 15;
+        store.Leaves.ApplyLeftover(splitId, past, halfDay, halfDay);
+        Assert.Equal(halfDay, store.Leaves.CarryMinutesByYear(splitId)[past]);
+        Assert.Equal(halfDay, Assert.Single(store.Leaves.List(splitId), row => row.Kind == Leave.KindSettlement).Minutes);
     }
 
 }

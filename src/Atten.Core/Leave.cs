@@ -16,6 +16,14 @@ public static class Leave
     public const int MonthlyLeaveMinutes = LeaveDayMinutes * 5 / 2;
     public const int CarryLeaveDays = 9;
     public const int CarryLeaveMinutes = CarryLeaveDays * LeaveDayMinutes;
+    public const string KindLeave = "leave";
+    public const string KindSettlement = "settlement";
+    public const string LeftoverNone = "مانده‌ای برای ثبت نیست.";
+    public const string LeftoverOpenYear = "سال جاری هنوز باز است.";
+    public const string LeftoverClosingNoTransfer = "سال قطع همکاری منتقل نمی‌شود.";
+    public const string LeftoverExceeds = "جمع انتقال و تسویه از مانده بیشتر است.";
+    public const string LeftoverNeedAmount = "میزان انتقال یا تسویه را وارد کنید.";
+    public const string LeftoverNegative = "میزان انتقال و تسویه نمی‌تواند منفی باشد.";
 
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
@@ -111,13 +119,16 @@ public static class Leave
     /// may appear more than once; its minutes are added together.
     /// <c>CarryIn</c> is the previous year's <c>CarryOut</c> only when that year
     /// is the immediately previous Shamsi year. A missing year drops the carry.
-    /// A positive remainder carries at most 9 days. The year equal to
-    /// <paramref name="closingYear"/> carries nothing. A zero or negative
+    /// A positive remainder carries at most 9 days, or the custom cap for
+    /// that year when <paramref name="carryCaps"/> has one. Missing
+    /// <paramref name="carryCaps"/> keeps the 9-day default. The year equal
+    /// to <paramref name="closingYear"/> carries nothing. A zero or negative
     /// remainder carries nothing.
     /// </summary>
     public static IReadOnlyList<LeaveYearSettlement> SettleLeaveYears(
         IEnumerable<(int Year, int Earned, int Used)> years,
-        int? closingYear = null)
+        int? closingYear = null,
+        IReadOnlyDictionary<int, int>? carryCaps = null)
     {
         ArgumentNullException.ThrowIfNull(years);
 
@@ -138,7 +149,7 @@ public static class Leave
             int usable = earned + carryIn;
             int remaining = usable - used;
             int carryOut = remaining > 0 && year != closingYear
-                ? Math.Min(remaining, CarryLeaveMinutes)
+                ? Math.Min(remaining, CarryCapMinutes(year, carryCaps))
                 : 0;
             settled.Add(new LeaveYearSettlement(year, earned, carryIn, used, usable, remaining, carryOut));
             incoming = carryOut;
@@ -155,13 +166,15 @@ public static class Leave
     /// cooperation end makes that Shamsi year the closing year, so it carries
     /// nothing forward. The returned minutes are the balance before that
     /// transfer. <paramref name="usedByYear"/> maps a Shamsi year to minutes
-    /// of leave that start in that year.
+    /// of leave that start in that year. <paramref name="carryCaps"/> is the
+    /// same optional year-to-cap map as <see cref="SettleLeaveYears"/>.
     /// </summary>
     public static int RemainingLeaveMinutes(
         int year,
         DateOnly? cooperationStart,
         DateOnly? cooperationEnd,
-        IReadOnlyDictionary<int, int> usedByYear)
+        IReadOnlyDictionary<int, int> usedByYear,
+        IReadOnlyDictionary<int, int>? carryCaps = null)
     {
         ArgumentNullException.ThrowIfNull(usedByYear);
 
@@ -184,7 +197,7 @@ public static class Leave
             entries.Add((candidate, earned, usedByYear.GetValueOrDefault(candidate)));
         }
 
-        foreach (LeaveYearSettlement row in SettleLeaveYears(entries, closingYear))
+        foreach (LeaveYearSettlement row in SettleLeaveYears(entries, closingYear, carryCaps))
         {
             if (row.Year == year)
             {
@@ -212,6 +225,63 @@ public static class Leave
         }
 
         return end.DayNumber - start.DayNumber + 1;
+    }
+
+    /// <summary>
+    /// Inclusive working days between two dates. Friday and official holidays
+    /// count as zero. Same day or a reversed range is empty so hourly leave
+    /// can keep the days field blank.
+    /// </summary>
+    public static int? WorkingDayCount(DateOnly start, DateOnly end, Func<DateOnly, bool> isHoliday)
+    {
+        ArgumentNullException.ThrowIfNull(isHoliday);
+        if (end <= start)
+        {
+            return null;
+        }
+
+        int count = 0;
+        for (DateOnly current = start; current <= end; current = current.AddDays(1))
+        {
+            if (!isHoliday(current))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// True when two inclusive leave ranges share at least one working day.
+    /// Friday and official holidays do not count. An empty calendar
+    /// intersection is not overlap.
+    /// </summary>
+    public static bool OverlapsWorkingDays(
+        DateOnly startA,
+        DateOnly endA,
+        DateOnly startB,
+        DateOnly endB,
+        Func<DateOnly, bool> isHoliday)
+    {
+        ArgumentNullException.ThrowIfNull(isHoliday);
+
+        DateOnly overlapStart = Max(startA, startB);
+        DateOnly overlapEnd = Min(endA, endB);
+        if (overlapEnd < overlapStart)
+        {
+            return false;
+        }
+
+        for (DateOnly current = overlapStart; current <= overlapEnd; current = current.AddDays(1))
+        {
+            if (!isHoliday(current))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static (int Days, int Hours, int Minutes) SplitLeaveMinutes(int minutes)
@@ -263,13 +333,15 @@ public static class Leave
     /// <summary>
     /// Settle earned and used minutes for each cooperation year that earns leave.
     /// An empty start returns no rows. A recorded end makes that Shamsi year
-    /// the closing year.
+    /// the closing year. <paramref name="carryCaps"/> is the same optional
+    /// year-to-cap map as <see cref="SettleLeaveYears"/>.
     /// </summary>
     public static IReadOnlyDictionary<int, LeaveYearSettlement> SettleCooperationYears(
         DateOnly? cooperationStart,
         DateOnly? cooperationEnd,
         IReadOnlyDictionary<int, int> usedByYear,
-        DateOnly? today = null)
+        DateOnly? today = null,
+        IReadOnlyDictionary<int, int>? carryCaps = null)
     {
         ArgumentNullException.ThrowIfNull(usedByYear);
         if (cooperationStart is null)
@@ -290,7 +362,98 @@ public static class Leave
         }
 
         int? closingYear = cooperationEnd is null ? null : ShamsiYearOf(cooperationEnd.Value);
-        return SettleLeaveYears(entries, closingYear).ToDictionary(row => row.Year);
+        return SettleLeaveYears(entries, closingYear, carryCaps).ToDictionary(row => row.Year);
+    }
+
+    /// <summary>
+    /// A leftover can be allocated when remaining minutes are positive and
+    /// the year is already closed, or it is the cooperation closing year.
+    /// </summary>
+    public static bool CanSettleLeftover(
+        int year,
+        int remainingMinutes,
+        int? closingYear,
+        DateOnly? today = null)
+    {
+        if (remainingMinutes <= 0)
+        {
+            return false;
+        }
+
+        return IsLeftoverYearClosed(year, closingYear, today);
+    }
+
+    /// <summary>
+    /// Transfer is allowed on a closed leftover year, except the cooperation
+    /// closing year: that year has nothing to send forward.
+    /// </summary>
+    public static bool CanCarryLeftover(
+        int year,
+        int remainingMinutes,
+        int? closingYear,
+        DateOnly? today = null)
+    {
+        if (year == closingYear)
+        {
+            return false;
+        }
+
+        return CanSettleLeftover(year, remainingMinutes, closingYear, today);
+    }
+
+    public static bool IsLeftoverYearClosed(int year, int? closingYear, DateOnly? today = null)
+    {
+        int current = ShamsiYearOf(today ?? DateOnly.FromDateTime(DateTime.Today));
+        return year == closingYear || year < current;
+    }
+
+    public static int SuggestedTransferMinutes(int remainingMinutes, bool canTransfer)
+    {
+        if (!canTransfer || remainingMinutes <= 0)
+        {
+            return 0;
+        }
+
+        return Math.Min(remainingMinutes, CarryLeaveMinutes);
+    }
+
+    public static void ValidateLeftoverAllocation(
+        int year,
+        int remainingMinutes,
+        int transferMinutes,
+        int settleMinutes,
+        int? closingYear,
+        DateOnly? today = null)
+    {
+        if (remainingMinutes <= 0)
+        {
+            throw new ArgumentException(LeftoverNone);
+        }
+
+        if (transferMinutes < 0 || settleMinutes < 0)
+        {
+            throw new ArgumentException(LeftoverNegative);
+        }
+
+        if (!IsLeftoverYearClosed(year, closingYear, today))
+        {
+            throw new ArgumentException(LeftoverOpenYear);
+        }
+
+        if (transferMinutes > 0 && year == closingYear)
+        {
+            throw new ArgumentException(LeftoverClosingNoTransfer);
+        }
+
+        if (transferMinutes + settleMinutes > remainingMinutes)
+        {
+            throw new ArgumentException(LeftoverExceeds);
+        }
+
+        if (transferMinutes == 0 && settleMinutes == 0)
+        {
+            throw new ArgumentException(LeftoverNeedAmount);
+        }
     }
 
     public static LeaveYearBalance YearBalance(
@@ -407,6 +570,16 @@ public static class Leave
         }
 
         return day;
+    }
+
+    private static int CarryCapMinutes(int year, IReadOnlyDictionary<int, int>? carryCaps)
+    {
+        if (carryCaps is not null && carryCaps.TryGetValue(year, out int cap))
+        {
+            return Math.Max(cap, 0);
+        }
+
+        return CarryLeaveMinutes;
     }
 
     private static DateOnly Max(DateOnly left, DateOnly right)

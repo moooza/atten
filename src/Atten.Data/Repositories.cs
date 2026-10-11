@@ -66,15 +66,19 @@ public interface IPersonnelRepository
 
 public interface ILeaveRepository
 {
-    long Add(long personnelId, DateOnly startDate, DateOnly endDate, int minutes);
+    long Add(long personnelId, DateOnly startDate, DateOnly endDate, int minutes, string? description = null);
 
-    void Update(long leaveId, long personnelId, DateOnly startDate, DateOnly endDate, int minutes);
+    void Update(long leaveId, long personnelId, DateOnly startDate, DateOnly endDate, int minutes, string? description = null);
 
     void Delete(long leaveId);
 
     IReadOnlyList<LeaveRecord> List(long personnelId, DateOnly? startDate = null, DateOnly? endDate = null);
 
     int SumMinutes(long personnelId, DateOnly startDate, DateOnly endDate);
+
+    IReadOnlyDictionary<int, int> CarryMinutesByYear(long personnelId);
+
+    void ApplyLeftover(long personnelId, int year, int transferMinutes, int settleMinutes);
 }
 
 public interface IClockEventRepository
@@ -226,6 +230,8 @@ public sealed record LeaveRecord(
     string StartDate,
     string EndDate,
     int Minutes,
+    string Kind,
+    string? Description,
     string CreatedAt,
     string UpdatedAt,
     long? CreatedBy,

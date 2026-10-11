@@ -38,6 +38,7 @@ public static class DatabaseBackup
             ["personnel"] = "پرسنل",
             ["clock_events"] = "ورود و خروج",
             ["leaves"] = "مرخصی‌ها",
+            ["leave_year_transfers"] = "انتقال مانده مرخصی",
             ["calculation_days"] = "روزهای محاسبه",
             ["calculation_punches"] = "ساعت‌های محاسبه",
             ["payroll_runs"] = "حقوق",

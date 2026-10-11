@@ -275,6 +275,7 @@ public sealed partial class CalculationPage : Page
         Dictionary<string, bool> holidays = _store.ListBalances(remoteId, start, end)
             .ToDictionary(row => row.Date, row => row.Holiday, StringComparer.Ordinal);
         IReadOnlyList<LeaveSpan> leaves = _leaves.List(personnelId, start, end)
+            .Where(row => row.Kind == Leave.KindLeave)
             .Select(row => new LeaveSpan(Day(row.StartDate), Day(row.EndDate), row.Minutes))
             .ToList();
         IReadOnlyList<SheetRow> rows = Sheet.BuildSheet(

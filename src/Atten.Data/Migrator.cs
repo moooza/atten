@@ -10,6 +10,8 @@ namespace Atten.Data;
 /// Versions 001–011 are the original schema. 012 adds users and actor columns.
 /// 013 adds payroll runs with the same created_by / updated_by columns.
 /// 014 adds official holidays (Gregorian date + title + actors).
+/// 015 adds leave kind and year-to-year leftover transfers.
+/// 016 adds an optional leave description.
 /// </summary>
 public static class Migrator
 {

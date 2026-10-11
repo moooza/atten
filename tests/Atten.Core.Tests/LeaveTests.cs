@@ -305,4 +305,113 @@ public class LeaveTests
         Assert.Null(Leave.CalendarDaySpan(next, start));
         Assert.Equal(3, Leave.CalendarDaySpan(start, next));
     }
+
+    [Fact]
+    public void WorkingDayCountSkipsFridayAndOfficialHolidays()
+    {
+        DateOnly wednesday = Dates.ParseShamsiDate("1405/07/15");
+        DateOnly thursday = Dates.ParseShamsiDate("1405/07/16");
+        DateOnly saturday = Dates.ParseShamsiDate("1405/07/18");
+        static bool fridayOnly(DateOnly day) => OfficialHoliday.IsHoliday(day);
+
+        Assert.Equal(3, Leave.WorkingDayCount(wednesday, saturday, fridayOnly));
+        Assert.Null(Leave.WorkingDayCount(wednesday, wednesday, fridayOnly));
+        Assert.Null(Leave.WorkingDayCount(saturday, wednesday, fridayOnly));
+
+        IReadOnlySet<string> official = OfficialHoliday.Catalog([thursday]);
+        Assert.Equal(2, Leave.WorkingDayCount(wednesday, saturday, day => OfficialHoliday.IsHoliday(day, official)));
+        Assert.Equal(0, Leave.WorkingDayCount(thursday, Dates.ParseShamsiDate("1405/07/17"), day => OfficialHoliday.IsHoliday(day, official)));
+    }
+
+    [Fact]
+    public void OverlapsWorkingDaysOnlyOnSharedWorkingDays()
+    {
+        DateOnly wednesday = Dates.ParseShamsiDate("1405/07/15");
+        DateOnly thursday = Dates.ParseShamsiDate("1405/07/16");
+        DateOnly friday = Dates.ParseShamsiDate("1405/07/17");
+        DateOnly saturday = Dates.ParseShamsiDate("1405/07/18");
+        static bool fridayOnly(DateOnly day) => OfficialHoliday.IsHoliday(day);
+
+        Assert.True(Leave.OverlapsWorkingDays(wednesday, wednesday, wednesday, wednesday, fridayOnly));
+        Assert.True(Leave.OverlapsWorkingDays(wednesday, saturday, thursday, thursday, fridayOnly));
+        Assert.False(Leave.OverlapsWorkingDays(wednesday, friday, friday, saturday, fridayOnly));
+        Assert.False(Leave.OverlapsWorkingDays(wednesday, wednesday, thursday, thursday, fridayOnly));
+        Assert.False(Leave.OverlapsWorkingDays(wednesday, thursday, saturday, saturday, fridayOnly));
+
+        IReadOnlySet<string> official = OfficialHoliday.Catalog([thursday]);
+        bool withOfficial(DateOnly day) => OfficialHoliday.IsHoliday(day, official);
+        Assert.False(Leave.OverlapsWorkingDays(wednesday, thursday, thursday, friday, withOfficial));
+        Assert.True(Leave.OverlapsWorkingDays(wednesday, saturday, thursday, saturday, withOfficial));
+    }
+
+    [Fact]
+    public void ACustomCarryCapReplacesTheNineDayDefault()
+    {
+        int full = Leave.YearlyLeaveMinutes;
+        DateOnly start = Dates.ParseShamsiDate("1404/01/01");
+        IReadOnlyList<LeaveYearSettlement> defaults = Leave.SettleLeaveYears([(1404, full, 0), (1405, full, 0)]);
+        Assert.Equal(Leave.CarryLeaveMinutes, defaults[0].CarryOut);
+        Assert.Equal(Leave.CarryLeaveMinutes, defaults[1].CarryIn);
+        Assert.Equal(
+            full + Leave.CarryLeaveMinutes,
+            Leave.RemainingLeaveMinutes(1405, start, null, new Dictionary<int, int>()));
+
+        var caps = new Dictionary<int, int> { [1404] = full };
+        IReadOnlyList<LeaveYearSettlement> custom = Leave.SettleLeaveYears(
+            [(1404, full, 0), (1405, full, 0)],
+            carryCaps: caps);
+        Assert.Equal(full, custom[0].CarryOut);
+        Assert.Equal(full, custom[1].CarryIn);
+        Assert.Equal(2 * full, custom[1].Usable);
+        Assert.Equal(Leave.CarryLeaveMinutes, custom[1].CarryOut);
+        Assert.Equal(2 * full, Leave.RemainingLeaveMinutes(1405, start, null, new Dictionary<int, int>(), caps));
+
+        IReadOnlyDictionary<int, LeaveYearSettlement> settled = Leave.SettleCooperationYears(
+            start,
+            null,
+            new Dictionary<int, int>(),
+            Dates.ParseShamsiDate("1405/07/18"),
+            caps);
+        Assert.Equal(full, settled[1404].CarryOut);
+        Assert.Equal(2 * full, settled[1405].Remaining);
+
+        LeaveYearSettlement closed = Leave.SettleLeaveYears(
+            [(1404, full, 0)],
+            closingYear: 1404,
+            carryCaps: caps)[0];
+        Assert.Equal(full, closed.Remaining);
+        Assert.Equal(0, closed.CarryOut);
+    }
+
+    [Fact]
+    public void LeftoverActionsNeedAClosedYearOrTheClosingYear()
+    {
+        DateOnly today = Dates.ParseShamsiDate("1405/07/18");
+        Assert.False(Leave.CanSettleLeftover(1405, 1000, closingYear: null, today));
+        Assert.False(Leave.CanCarryLeftover(1405, 1000, closingYear: null, today));
+        Assert.True(Leave.CanSettleLeftover(1404, 1000, closingYear: null, today));
+        Assert.True(Leave.CanCarryLeftover(1404, 1000, closingYear: null, today));
+        Assert.False(Leave.CanSettleLeftover(1404, 0, closingYear: null, today));
+        Assert.False(Leave.CanCarryLeftover(1404, 0, closingYear: null, today));
+        Assert.True(Leave.CanSettleLeftover(1405, 1000, closingYear: 1405, today));
+        Assert.False(Leave.CanCarryLeftover(1405, 1000, closingYear: 1405, today));
+        Assert.Equal(Leave.CarryLeaveMinutes, Leave.SuggestedTransferMinutes(8000, canTransfer: true));
+        Assert.Equal(0, Leave.SuggestedTransferMinutes(8000, canTransfer: false));
+        Assert.Equal(500, Leave.SuggestedTransferMinutes(500, canTransfer: true));
+
+        Leave.ValidateLeftoverAllocation(1404, 8000, 900, 1100, closingYear: null, today);
+        ArgumentException closed = Assert.Throws<ArgumentException>(
+            () => Leave.ValidateLeftoverAllocation(1404, 8000, 100, 0, closingYear: 1404, today));
+        Assert.Equal(Leave.LeftoverClosingNoTransfer, closed.Message);
+        ArgumentException exceeds = Assert.Throws<ArgumentException>(
+            () => Leave.ValidateLeftoverAllocation(1404, 8000, 5000, 4000, closingYear: null, today));
+        Assert.Equal(Leave.LeftoverExceeds, exceeds.Message);
+        ArgumentException empty = Assert.Throws<ArgumentException>(
+            () => Leave.ValidateLeftoverAllocation(1404, 8000, 0, 0, closingYear: null, today));
+        Assert.Equal(Leave.LeftoverNeedAmount, empty.Message);
+        ArgumentException openYear = Assert.Throws<ArgumentException>(
+            () => Leave.ValidateLeftoverAllocation(1405, 8000, 0, 1000, closingYear: null, today));
+        Assert.Equal(Leave.LeftoverOpenYear, openYear.Message);
+        Leave.ValidateLeftoverAllocation(1405, 8000, 0, 2000, closingYear: 1405, today);
+    }
 }

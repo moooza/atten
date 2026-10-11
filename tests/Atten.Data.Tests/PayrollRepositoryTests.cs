@@ -24,7 +24,7 @@ public class PayrollRepositoryTests
         using var db = new TempDatabase();
         IAttenRepository store = db.OpenStore();
         var (start, end) = Payroll.MonthSpan(1405, 7);
-        DateOnly leaveDay = Dates.ParseShamsiDate("1405/07/10");
+        DateOnly leaveDay = Dates.ParseShamsiDate("1405/07/09");
         int leaveMinutes = Leave.ComposeLeaveMinutes(1, 0, 0);
         long personId = store.Personnel.Add(
             "علی",
