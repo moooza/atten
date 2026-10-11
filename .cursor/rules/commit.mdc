@@ -1,9 +1,19 @@
 ---
 description: >-
-  Commit message format for this repo. Use only when creating a git commit
+  Commit scope and message format. Use only when creating a git commit
   or drafting a commit message. Do not apply during implementation, review, or planning.
 alwaysApply: false
 ---
+
+# Commit scope
+
+One commit is one capability. Do not put unrelated work in the same commit.
+
+- Include only files and edits that serve the same feature, fix, or refactor.
+- If the working tree has more than one independent change (for example dashboard and official holidays), make a separate commit for each.
+- A shared helper belongs with the feature that introduced it. If two unrelated features both need it, commit the helper first, then each feature.
+- Do not stage leftover edits, formatting, or generated files that are not part of that capability.
+- If the user asked to commit everything, still split by capability and say how many commits you will make.
 
 # Commit messages
 
