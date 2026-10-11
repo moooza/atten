@@ -80,6 +80,28 @@ public class BackupTests
     }
 
     [Fact]
+    public void SnapshotsSitBesideDataWhenTheDatabaseLivesInData()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "atten-portable-" + Guid.NewGuid().ToString("N"));
+        string data = Path.Combine(root, AppPaths.DataFolderName);
+        Directory.CreateDirectory(data);
+        string dbFile = Path.Combine(data, AppPaths.DatabaseFileName);
+        try
+        {
+            Migrator.Apply(dbFile);
+            Assert.NotNull(DatabaseBackup.Snapshot(dbFile, keep: 1));
+
+            Assert.Equal(root, DatabaseBackup.PortableRoot(dbFile));
+            Assert.True(Directory.Exists(Path.Combine(root, "backups")));
+            Assert.False(Directory.Exists(Path.Combine(data, "backups")));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public void ExportNamesTheFileWithTheCreationTimeAndKeepsEveryRow()
     {
         using var db = new TempDatabase();

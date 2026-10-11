@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>atten</AssemblyName>
+    <RootNamespace>Atten.Launcher</RootNamespace>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ApplicationIcon>..\Atten.App\Assets\app.ico</ApplicationIcon>
+    <Description>Tiny portable stub that starts the app folder. No business rules.</Description>
+  </PropertyGroup>
+
+</Project>

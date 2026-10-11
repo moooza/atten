@@ -82,7 +82,7 @@ public static class DatabaseBackup
             return null;
         }
 
-        string folder = Path.Combine(ParentDirectory(dbFile), "backups");
+        string folder = Path.Combine(PortableRoot(dbFile), "backups");
         Directory.CreateDirectory(folder);
         string target = NextSnapshotPath(folder);
         if (!ConsistentCopy(dbFile, target, checkpointSource: true))
@@ -380,7 +380,7 @@ public static class DatabaseBackup
     public static IReadOnlyList<string> SnapshotPaths(string dbFile)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dbFile);
-        string folder = Path.Combine(ParentDirectory(dbFile), "backups");
+        string folder = Path.Combine(PortableRoot(dbFile), "backups");
         if (!Directory.Exists(folder))
         {
             return [];
@@ -730,6 +730,22 @@ public static class DatabaseBackup
             : parent;
     }
 
+    /// <summary>
+    /// Folder the operator sees: parent of <c>data</c> in a portable layout,
+    /// otherwise the folder that holds the database file.
+    /// </summary>
+    internal static string PortableRoot(string dbFile)
+    {
+        string folder = ParentDirectory(dbFile);
+        if (!string.Equals(Path.GetFileName(folder), AppPaths.DataFolderName, StringComparison.OrdinalIgnoreCase))
+        {
+            return folder;
+        }
+
+        string? root = Path.GetDirectoryName(folder);
+        return string.IsNullOrEmpty(root) ? folder : root;
+    }
+
     private static void Execute(SqliteConnection connection, string sql)
     {
         using SqliteCommand command = connection.CreateCommand();
@@ -787,7 +803,7 @@ internal sealed class SqliteBackupService : IBackupService
         _dbFile = dbFile;
     }
 
-    public string SuggestedFolder => ParentOf(_dbFile);
+    public string SuggestedFolder => DatabaseBackup.PortableRoot(_dbFile);
 
     public string Export(string folder, DateTime? moment = null)
     {
@@ -814,9 +830,4 @@ internal sealed class SqliteBackupService : IBackupService
         return DatabaseBackup.Describe(result);
     }
 
-    private static string ParentOf(string dbFile)
-    {
-        string? parent = Path.GetDirectoryName(Path.GetFullPath(dbFile));
-        return string.IsNullOrEmpty(parent) ? "" : parent;
-    }
 }

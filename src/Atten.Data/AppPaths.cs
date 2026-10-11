@@ -12,6 +12,8 @@ public static class AppPaths
     public const string DatabaseFileName = "atten.db";
     public const string DataFolderName = "data";
 
+    public const string ContentFolderName = "app";
+
     public static bool IsPublished()
     {
         if (PublishedOverride is not null)
@@ -61,12 +63,22 @@ public static class AppPaths
     {
         string? processPath = ProcessPathOverride ?? Environment.ProcessPath;
         string? directory = Path.GetDirectoryName(processPath);
-        if (!string.IsNullOrEmpty(directory))
+        if (string.IsNullOrEmpty(directory))
         {
-            return Path.GetFullPath(directory);
+            return Path.GetFullPath(AppContext.BaseDirectory);
         }
 
-        return Path.GetFullPath(AppContext.BaseDirectory);
+        string full = Path.GetFullPath(directory);
+        if (string.Equals(Path.GetFileName(full), ContentFolderName, StringComparison.OrdinalIgnoreCase))
+        {
+            string? parent = Path.GetDirectoryName(full);
+            if (!string.IsNullOrEmpty(parent))
+            {
+                return parent;
+            }
+        }
+
+        return full;
     }
 
     private static IEnumerable<string> ProbeDirectories()

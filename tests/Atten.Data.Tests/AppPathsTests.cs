@@ -48,6 +48,28 @@ public class AppPathsTests : IDisposable
     }
 
     [Fact]
+    public void PublishedAppDirIsTheParentWhenTheExecutableLivesInApp()
+    {
+        string root = CreateTempDirectory();
+        string folder = Path.Combine(root, AppPaths.ContentFolderName);
+        Directory.CreateDirectory(folder);
+        try
+        {
+            string exe = Path.Combine(folder, "Atten.App.exe");
+            File.WriteAllBytes(exe, []);
+            AppPaths.PublishedOverride = () => true;
+            AppPaths.ProcessPathOverride = exe;
+
+            Assert.Equal(Path.GetFullPath(root), AppPaths.AppDir());
+            Assert.Equal(Path.Combine(root, "data", "atten.db"), AppPaths.DbFile());
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public void DbFileIsUnderDataDir()
     {
         string folder = CreateTempDirectory();
