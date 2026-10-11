@@ -22,6 +22,8 @@ public partial class App : Application
 
     public Window? HostWindow => _window;
 
+    public event EventHandler? OfficialHolidaysChanged;
+
     public void ReloadStore()
     {
         Store = AttenStore.Open();
@@ -38,6 +40,7 @@ public partial class App : Application
             ? []
             : Store.OfficialHolidays.List();
         ShamsiCalendar.SharedOfficialDates = OfficialHoliday.Catalog(rows.Select(row => row.Date));
+        OfficialHolidaysChanged?.Invoke(this, EventArgs.Empty);
     }
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)

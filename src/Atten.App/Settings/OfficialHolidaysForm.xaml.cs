@@ -28,6 +28,7 @@ public sealed partial class OfficialHolidaysForm : UserControl
         _store = App.Current.Store?.OfficialHolidays;
         Heading.Text = AppMessages.OfficialHolidays;
         AddButton.Content = AppMessages.OfficialHolidayAdd;
+        PackButton.Content = AppMessages.OfficialHolidayPack;
         EditButton.Content = "ویرایش";
         BulkActions.Bind([AppBulkCommand.Delete()]);
         BulkActions.CommandChosen += OnBulkCommand;
@@ -47,8 +48,13 @@ public sealed partial class OfficialHolidaysForm : UserControl
 
     private void OnAdd(object sender, RoutedEventArgs args)
     {
-        Notice.Text = string.Empty;
+        ShowNotice(string.Empty, danger: false);
         OpenEditor(null);
+    }
+
+    private void OnPack(object sender, RoutedEventArgs args)
+    {
+        _ = LoadYearPack();
     }
 
     private void OnEdit(object sender, RoutedEventArgs args)
@@ -79,7 +85,7 @@ public sealed partial class OfficialHolidaysForm : UserControl
             return;
         }
 
-        Notice.Text = string.Empty;
+        ShowNotice(string.Empty, danger: false);
         Load();
     }
 
@@ -87,7 +93,7 @@ public sealed partial class OfficialHolidaysForm : UserControl
     {
         if (Notice.Text == AppMessages.OfficialHolidaySelectOne)
         {
-            Notice.Text = string.Empty;
+            ShowNotice(string.Empty, danger: false);
         }
     }
 
@@ -99,7 +105,7 @@ public sealed partial class OfficialHolidaysForm : UserControl
         }
 
         HolidayList.SelectedItem = row;
-        Notice.Text = string.Empty;
+        ShowNotice(string.Empty, danger: false);
         var menu = new AppMenuFlyout();
         var edit = new AppMenuItem { Text = "ویرایش" };
         edit.Click += (_, _) => OpenEditor(row.Record);
@@ -123,11 +129,11 @@ public sealed partial class OfficialHolidaysForm : UserControl
         IReadOnlyList<OfficialHolidayRow> chosen = ChosenRows();
         if (chosen.Count == 0)
         {
-            Notice.Text = AppMessages.OfficialHolidaySelectNone;
+            ShowNotice(AppMessages.OfficialHolidaySelectNone, danger: true);
             return;
         }
 
-        Notice.Text = string.Empty;
+        ShowNotice(string.Empty, danger: false);
         _ = DeleteHolidays(chosen);
     }
 
@@ -163,19 +169,102 @@ public sealed partial class OfficialHolidaysForm : UserControl
     {
         if (HolidayList.SelectedItem is not OfficialHolidayRow row)
         {
-            Notice.Text = AppMessages.OfficialHolidaySelectOne;
+            ShowNotice(AppMessages.OfficialHolidaySelectOne, danger: true);
             return;
         }
 
-        Notice.Text = string.Empty;
+        ShowNotice(string.Empty, danger: false);
         OpenEditor(row.Record);
+    }
+
+    private async Task LoadYearPack()
+    {
+        if (YearCombo.SelectedItem is not int year)
+        {
+            ShowNotice(AppMessages.OfficialHolidayChooseYear, danger: true);
+            return;
+        }
+
+        IReadOnlyList<OfficialHolidayDay>? pack = OfficialHolidayYearPack.For(year);
+        if (pack is null)
+        {
+            ShowNotice(AppMessages.OfficialHolidayPackMissing, danger: true);
+            return;
+        }
+
+        if (_store is null)
+        {
+            ShowNotice(AppMessages.OfficialHolidayListFailed, danger: true);
+            return;
+        }
+
+        var (start, end) = Leave.ShamsiYearSpan(year);
+        var existing = new HashSet<string>(
+            _store.List(start, end).Select(row => row.Date),
+            StringComparer.Ordinal);
+        IReadOnlyList<OfficialHolidayDay> fresh = pack
+            .Where(day => !existing.Contains(Dates.StorageDate(day.Date)))
+            .ToList();
+        int skipped = pack.Count - fresh.Count;
+        if (fresh.Count == 0)
+        {
+            ShowNotice(AppMessages.OfficialHolidayPackNoneNew, danger: false);
+            return;
+        }
+
+        if (!await ConfirmPack(year, fresh, skipped))
+        {
+            return;
+        }
+
+        try
+        {
+            OfficialHolidayImport result = _store.Import(
+                fresh.Select(day => new OfficialHolidayDraft(day.Date, day.Title)).ToList());
+            App.Current.ApplyOfficialHolidayCatalog();
+            Load();
+            ShowNotice(AppMessages.OfficialHolidayPackNotice(result.Added, result.Skipped), danger: false);
+        }
+        catch (Exception ex)
+        {
+            ShowNotice($"{AppMessages.OfficialHolidayPackFailed}: {ex.Message}", danger: true);
+        }
+    }
+
+    private Task<bool> ConfirmPack(int year, IReadOnlyList<OfficialHolidayDay> days, int skipped)
+    {
+        var lines = new List<AppConfirmLine>
+        {
+            new("تعداد: ", AppMessages.OfficialHolidayCount(days.Count)),
+        };
+        if (skipped > 0)
+        {
+            lines.Add(new AppConfirmLine(string.Empty, AppMessages.OfficialHolidayPackSkipped(skipped)));
+        }
+
+        foreach (OfficialHolidayDay day in days)
+        {
+            lines.Add(new AppConfirmLine(string.Empty, $"{Dates.FormatShamsiDate(day.Date)} — {day.Title}"));
+        }
+
+        return AppConfirmDialog.ShowAsync(
+            XamlRoot,
+            ActualTheme,
+            new AppConfirmRequest
+            {
+                Title = AppMessages.OfficialHolidayPackTitle(year),
+                Ask = AppMessages.OfficialHolidayPackAsk,
+                Lines = lines,
+                ConfirmText = AppMessages.OfficialHolidayPack,
+                ConfirmKind = AppButtonKind.Primary,
+            });
     }
 
     private void OpenEditor(OfficialHolidayRecord? holiday)
     {
         if (_store is null)
         {
-            Notice.Text = AppMessages.OfficialHolidayListFailed;
+            ShowNotice(AppMessages.OfficialHolidayListFailed, danger: true);
             return;
         }
 
@@ -263,7 +352,7 @@ public sealed partial class OfficialHolidaysForm : UserControl
     {
         if (_store is null)
         {
-            Notice.Text = AppMessages.OfficialHolidayListFailed;
+            ShowNotice(AppMessages.OfficialHolidayListFailed, danger: true);
             return;
         }
 
@@ -283,13 +372,13 @@ public sealed partial class OfficialHolidaysForm : UserControl
                 _store.DeleteMany(rows.Select(row => row.Record.Id).ToList());
             }
 
-            Notice.Text = string.Empty;
+            ShowNotice(string.Empty, danger: false);
             App.Current.ApplyOfficialHolidayCatalog();
             Load();
         }
         catch (Exception ex)
         {
-            Notice.Text = $"{AppMessages.OfficialHolidayDeleteFailed}: {ex.Message}";
+            ShowNotice($"{AppMessages.OfficialHolidayDeleteFailed}: {ex.Message}", danger: true);
         }
     }
 
@@ -324,6 +413,7 @@ public sealed partial class OfficialHolidaysForm : UserControl
 
     private void Load()
     {
+        PaintPackButton();
         DetachRows();
         if (YearCombo.SelectedItem is not int year)
         {
@@ -353,7 +443,10 @@ public sealed partial class OfficialHolidaysForm : UserControl
             if (_rows.Count == 0)
             {
                 CountText.Text = string.Empty;
-                ShowEmpty(AppMessages.OfficialHolidayEmpty);
+                ShowEmpty(
+                    OfficialHolidayYearPack.Has(year)
+                        ? AppMessages.OfficialHolidayEmptyPack
+                        : AppMessages.OfficialHolidayEmpty);
                 return;
             }
 
@@ -410,6 +503,22 @@ public sealed partial class OfficialHolidaysForm : UserControl
         }
 
         _syncingChecks = false;
+    }
+
+    private void PaintPackButton()
+    {
+        bool has = YearCombo.SelectedItem is int year && OfficialHolidayYearPack.Has(year);
+        PackButton.Visibility = has ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void ShowNotice(string message, bool danger)
+    {
+        Notice.Text = message;
+        string key = danger ? "AppDangerText" : "AppInkText";
+        if (Application.Current.Resources.TryGetValue(key, out object? resource) && resource is Style style)
+        {
+            Notice.Style = style;
+        }
     }
 
     private static bool IsOnSelectBox(DependencyObject source)

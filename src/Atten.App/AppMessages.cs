@@ -177,14 +177,36 @@ public static class AppMessages
 
     public const string AdvancedSettings = "تنظیمات پیشرفته";
 
+    public const string DashboardHolidayMissing = "تعطیلات رسمی امسال اضافه نشده است.";
+
+    public const string DashboardHolidayMissingHint =
+        "از دکمه تنظیمات در نوار بالا، تنظیمات پیشرفته را باز کنید و مدیریت تعطیلات رسمی را بزنید.";
+
+    public const string DashboardHolidayReady = "تعطیلات رسمی امسال ثبت شده است.";
+
     public const string OfficialHolidays = "تعطیلات رسمی";
 
     public const string OfficialHolidayManage = "مدیریت تعطیلات رسمی";
 
     public const string OfficialHolidayHint =
-        "تعطیلات رسمی هر سال جداگانه ثبت می‌شود. جمعه در این فهرست نیست.";
+        "تعطیلات رسمی هر سال جداگانه ثبت می‌شود. جمعه در این فهرست نیست. " +
+        "تاریخ جابه‌جاشونده را می‌توان ویرایش کرد و تعطیل اعلامی را دستی افزود.";
 
     public const string OfficialHolidayAdd = "افزودن تعطیلات رسمی";
+
+    public const string OfficialHolidayPack = "بارگذاری بسته سال";
+
+    public const string OfficialHolidayPackAsk =
+        "روزهای تعطیل رسمی این سال افزوده شوند؟ تاریخ جابه‌جاشونده را بعداً می‌توان ویرایش کرد.";
+
+    public const string OfficialHolidayPackMissing = "برای این سال بسته رسمی آماده نیست.";
+
+    public const string OfficialHolidayPackNoneNew = "همهٔ روزهای این بسته از قبل ثبت شده‌اند.";
+
+    public const string OfficialHolidayPackFailed = "بارگذاری بسته سال ممکن نشد";
+
+    public const string OfficialHolidayEmptyPack =
+        "برای این سال تعطیل رسمی ثبت نشده است. می‌توانید بسته سال را بارگذاری کنید.";
 
     public const string OfficialHolidayEdit = "ویرایش تعطیل رسمی";
 
@@ -246,6 +268,27 @@ public static class AppMessages
     public static string OfficialHolidayCount(int count)
     {
         return $"{count} مورد";
+    }
+
+    public static string OfficialHolidayPackTitle(int year)
+    {
+        return $"بارگذاری بسته سال {year}";
+    }
+
+    public static string OfficialHolidayPackNotice(int added, int skipped)
+    {
+        string text = added > 0 ? $"{added} مورد افزوده شد." : OfficialHolidayPackNoneNew;
+        if (skipped > 0)
+        {
+            text = $"{text} {skipped} مورد از قبل ثبت بود.";
+        }
+
+        return text;
+    }
+
+    public static string OfficialHolidayPackSkipped(int count)
+    {
+        return $"{count} روز از قبل ثبت شده و دوباره افزوده نمی‌شود.";
     }
 
     public static string LeavePreview(int minutes)

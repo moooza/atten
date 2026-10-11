@@ -35,12 +35,17 @@
                 Orientation="Horizontal"
                 VerticalAlignment="Center"
                 Spacing="{StaticResource FieldGap}">
-                <TextBlock x:Name="Notice" Style="{StaticResource AppDangerText}" />
+                <TextBlock x:Name="Notice" Style="{StaticResource AppInkText}" />
                 <theme:AppBulkActions x:Name="BulkActions" />
                 <theme:AppButton
                     x:Name="EditButton"
                     Kind="Secondary"
                     Click="OnEdit" />
+                <theme:AppButton
+                    x:Name="PackButton"
+                    Kind="Secondary"
+                    Click="OnPack"
+                    Visibility="Collapsed" />
                 <theme:AppButton
                     x:Name="AddButton"
                     Kind="Primary"

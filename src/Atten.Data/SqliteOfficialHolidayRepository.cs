@@ -78,6 +78,78 @@ internal sealed class SqliteOfficialHolidayRepository : IOfficialHolidayReposito
             RepositoryGuard.HolidaySaveError);
     }
 
+    public OfficialHolidayImport Import(IReadOnlyList<OfficialHolidayDraft> days)
+    {
+        ArgumentNullException.ThrowIfNull(days);
+        var prepared = new List<(string Date, string Title)>(days.Count);
+        foreach (OfficialHolidayDraft day in days)
+        {
+            ArgumentNullException.ThrowIfNull(day);
+            prepared.Add((
+                RepositoryGuard.StorageDay(day.Date),
+                RepositoryGuard.RequiredText(day.Title, RepositoryGuard.HolidayTitle)));
+        }
+
+        if (prepared.Count == 0)
+        {
+            throw new ArgumentException(RepositoryGuard.HolidayDates);
+        }
+
+        string createdAt = _session.Timestamp();
+        return _session.Write(
+            connection =>
+            {
+                using SqliteTransaction transaction = connection.BeginTransaction();
+                var existing = new HashSet<string>(StringComparer.Ordinal);
+                using (SqliteCommand select = connection.CreateCommand())
+                {
+                    select.Transaction = transaction;
+                    select.CommandText = "SELECT date FROM official_holidays";
+                    using SqliteDataReader reader = select.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        existing.Add(reader.GetString(0));
+                    }
+                }
+
+                var seen = new HashSet<string>(StringComparer.Ordinal);
+                int added = 0;
+                int skipped = 0;
+                foreach ((string stored, string title) in prepared)
+                {
+                    if (existing.Contains(stored) || !seen.Add(stored))
+                    {
+                        skipped += 1;
+                        continue;
+                    }
+
+                    using SqliteCommand insert = connection.CreateCommand();
+                    insert.Transaction = transaction;
+                    insert.CommandText =
+                        """
+                        INSERT INTO official_holidays (
+                            date, title, created_at, updated_at, created_by, updated_by
+                        )
+                        VALUES (
+                            $date, $title, $created_at, $updated_at, $created_by, $updated_by
+                        )
+                        """;
+                    insert.Parameters.AddWithValue("$date", stored);
+                    insert.Parameters.AddWithValue("$title", title);
+                    insert.Parameters.AddWithValue("$created_at", createdAt);
+                    insert.Parameters.AddWithValue("$updated_at", createdAt);
+                    insert.Parameters.AddWithValue("$created_by", _session.ActorId);
+                    insert.Parameters.AddWithValue("$updated_by", _session.ActorId);
+                    insert.ExecuteNonQuery();
+                    added += 1;
+                }
+
+                transaction.Commit();
+                return new OfficialHolidayImport(added, skipped);
+            },
+            RepositoryGuard.HolidaySaveError);
+    }
+
     public void Update(long holidayId, DateOnly date, string title)
     {
         long holidayKey = RepositoryGuard.HolidayId(holidayId);

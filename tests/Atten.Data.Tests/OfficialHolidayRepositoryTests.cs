@@ -234,6 +234,49 @@ public class OfficialHolidayRepositoryTests : IDisposable
     }
 
     [Fact]
+    public void ImportWritesNewPackDaysAndSkipsADateThatIsAlreadyStored()
+    {
+        using var db = new TempDatabase();
+        IAttenRepository store = db.OpenStore();
+        IReadOnlyList<OfficialHolidayDay> pack = OfficialHolidayYearPack.For(1405)!;
+        DateOnly nowruz = Dates.ParseShamsiDate("1405/01/01");
+        store.OfficialHolidays.Add(nowruz, "نوروز");
+
+        OfficialHolidayImport first;
+        using (StorageClock.Freeze("2026-10-11T14:00:00"))
+        {
+            first = store.OfficialHolidays.Import(
+                pack.Select(day => new OfficialHolidayDraft(day.Date, day.Title)).ToList());
+        }
+
+        Assert.Equal(pack.Count - 1, first.Added);
+        Assert.Equal(1, first.Skipped);
+        IReadOnlyList<OfficialHolidayRecord> rows = store.OfficialHolidays.List(
+            Leave.ShamsiYearSpan(1405).Start,
+            Leave.ShamsiYearSpan(1405).End);
+        Assert.Equal(pack.Count, rows.Count);
+        Assert.Equal("نوروز", rows.Single(row => row.Date == Dates.StorageDate(nowruz)).Title);
+        Assert.Contains(rows, row => row.Title == "عاشورا");
+
+        OfficialHolidayImport second = store.OfficialHolidays.Import(
+            pack.Select(day => new OfficialHolidayDraft(day.Date, day.Title)).ToList());
+        Assert.Equal(0, second.Added);
+        Assert.Equal(pack.Count, second.Skipped);
+        Assert.Equal(pack.Count, store.OfficialHolidays.List(
+            Leave.ShamsiYearSpan(1405).Start,
+            Leave.ShamsiYearSpan(1405).End).Count);
+
+        ArgumentException empty = Assert.Throws<ArgumentException>(
+            () => store.OfficialHolidays.Import([]));
+        Assert.Equal("حداقل یک تاریخ را انتخاب کنید.", empty.Message);
+
+        ArgumentException blank = Assert.Throws<ArgumentException>(
+            () => store.OfficialHolidays.Import(
+                [new OfficialHolidayDraft(Dates.ParseShamsiDate("1405/02/01"), "  ")]));
+        Assert.Equal("عنوان تعطیل را وارد کنید.", blank.Message);
+    }
+
+    [Fact]
     public void ListRejectsAReversedRange()
     {
         using var db = new TempDatabase();

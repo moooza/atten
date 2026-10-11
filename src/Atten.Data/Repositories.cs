@@ -133,6 +133,8 @@ public interface IOfficialHolidayRepository
 
     void AddMany(IReadOnlyList<DateOnly> dates, string title);
 
+    OfficialHolidayImport Import(IReadOnlyList<OfficialHolidayDraft> days);
+
     void Update(long holidayId, DateOnly date, string title);
 
     void Delete(long holidayId);
@@ -273,3 +275,7 @@ public sealed record OfficialHolidayRecord(
     string UpdatedAt,
     long CreatedBy,
     long UpdatedBy);
+
+public sealed record OfficialHolidayDraft(DateOnly Date, string Title);
+
+public sealed record OfficialHolidayImport(int Added, int Skipped);

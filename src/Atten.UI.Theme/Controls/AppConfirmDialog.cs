@@ -76,9 +76,35 @@ public static class AppConfirmDialog
             FlowDirection = FlowDirection.LeftToRight,
         };
         body.Children.Add(ask);
-        foreach (AppConfirmLine line in request.Lines)
+        if (request.Lines.Count > 0)
         {
-            body.Children.Add(HighlightedLine(line, accent));
+            var lines = new StackPanel
+            {
+                Spacing = 6,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                FlowDirection = FlowDirection.LeftToRight,
+            };
+            foreach (AppConfirmLine line in request.Lines)
+            {
+                lines.Children.Add(HighlightedLine(line, accent));
+            }
+
+            var scroller = new ScrollViewer
+            {
+                Content = lines,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalScrollMode = ScrollMode.Disabled,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                VerticalScrollMode = ScrollMode.Auto,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            };
+            if (Application.Current?.Resources.TryGetValue("ConfirmLinesMaxHeight", out object? height) == true
+                && height is double maxHeight)
+            {
+                scroller.MaxHeight = maxHeight;
+            }
+
+            body.Children.Add(scroller);
         }
 
         body.Children.Add(actions);
