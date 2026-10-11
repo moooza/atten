@@ -4,47 +4,69 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:theme="using:Atten.UI.Theme"
     Background="{ThemeResource Surface}"
-    FlowDirection="RightToLeft">
+    FlowDirection="LeftToRight">
     <Grid Padding="{StaticResource PagePadding}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Grid Margin="{StaticResource HeaderBottomMargin}">
+        <StackPanel Margin="{StaticResource HeaderBottomMargin}">
             <TextBlock
                 Text="پشتیبان"
                 Style="{StaticResource AppTitleText}"
-                HorizontalAlignment="Right" />
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
             <TextBlock
                 x:Name="Notice"
                 Style="{StaticResource AppDangerText}"
-                HorizontalAlignment="Left" />
-        </Grid>
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
+        </StackPanel>
 
         <ScrollViewer
             Grid.Row="1"
+            HorizontalAlignment="Stretch"
+            HorizontalContentAlignment="Stretch"
+            HorizontalScrollBarVisibility="Disabled"
             VerticalScrollBarVisibility="Auto">
-            <StackPanel Spacing="{StaticResource PageGap}">
-                <Border Style="{StaticResource AppPanel}" Padding="{StaticResource FormPadding}">
-                    <StackPanel>
+            <StackPanel
+                HorizontalAlignment="Stretch"
+                Spacing="{StaticResource PageGap}">
+                <Border
+                    Style="{StaticResource AppPanel}"
+                    Padding="{StaticResource FormPadding}"
+                    HorizontalAlignment="Stretch">
+                    <StackPanel HorizontalAlignment="Stretch">
                         <TextBlock
                             Text="ایجاد نسخهٔ پشتیبان"
-                            Style="{StaticResource AppListHeaderText}" />
+                            Style="{StaticResource AppListHeaderText}"
+                            HorizontalAlignment="Right"
+                            TextAlignment="Right" />
                         <TextBlock
                             Text="یک پوشه انتخاب کنید تا نسخهٔ کامل پایگاه داده آنجا ذخیره شود. تاریخ و ساعت ساخت در نام فایل می‌آید."
                             Style="{StaticResource AppCaptionText}"
                             TextWrapping="Wrap"
+                            HorizontalAlignment="Right"
+                            TextAlignment="Right"
                             Margin="{StaticResource FieldHintMargin}" />
                         <Grid Margin="{StaticResource FormActionsMargin}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
                             <theme:AppButton
+                                Grid.Column="0"
                                 Content="ایجاد نسخهٔ پشتیبان"
                                 Kind="Primary"
-                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
                                 Click="OnCreateBackup" />
                             <StackPanel
+                                Grid.Column="1"
                                 Orientation="Horizontal"
                                 HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                FlowDirection="RightToLeft"
                                 Spacing="{StaticResource FieldGap}">
                                 <theme:AppButton
                                     Content="انتخاب مسیر"
@@ -60,25 +82,40 @@
                     </StackPanel>
                 </Border>
 
-                <Border Style="{StaticResource AppPanel}" Padding="{StaticResource FormPadding}">
-                    <StackPanel>
+                <Border
+                    Style="{StaticResource AppPanel}"
+                    Padding="{StaticResource FormPadding}"
+                    HorizontalAlignment="Stretch">
+                    <StackPanel HorizontalAlignment="Stretch">
                         <TextBlock
                             Text="بازگردانی نسخهٔ پشتیبان"
-                            Style="{StaticResource AppListHeaderText}" />
+                            Style="{StaticResource AppListHeaderText}"
+                            HorizontalAlignment="Right"
+                            TextAlignment="Right" />
                         <TextBlock
                             Text="یک فایل نسخهٔ پشتیبان انتخاب کنید. پیش از بازگردانی، تأیید گرفته می‌شود چون همهٔ اطلاعات فعلی حذف خواهند شد."
                             Style="{StaticResource AppCaptionText}"
                             TextWrapping="Wrap"
+                            HorizontalAlignment="Right"
+                            TextAlignment="Right"
                             Margin="{StaticResource FieldHintMargin}" />
                         <Grid Margin="{StaticResource FormActionsMargin}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
                             <theme:AppButton
+                                Grid.Column="0"
                                 Content="بازگردانی"
                                 Kind="Danger"
-                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
                                 Click="OnRestore" />
                             <StackPanel
+                                Grid.Column="1"
                                 Orientation="Horizontal"
                                 HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                FlowDirection="RightToLeft"
                                 Spacing="{StaticResource FieldGap}">
                                 <theme:AppButton
                                     Content="انتخاب فایل"
@@ -94,26 +131,41 @@
                     </StackPanel>
                 </Border>
 
-                <Border Style="{StaticResource AppPanel}" Padding="{StaticResource FormPadding}">
-                    <StackPanel>
+                <Border
+                    Style="{StaticResource AppPanel}"
+                    Padding="{StaticResource FormPadding}"
+                    HorizontalAlignment="Stretch">
+                    <StackPanel HorizontalAlignment="Stretch">
                         <TextBlock
                             Text="بررسی سلامت"
-                            Style="{StaticResource AppListHeaderText}" />
+                            Style="{StaticResource AppListHeaderText}"
+                            HorizontalAlignment="Right"
+                            TextAlignment="Right" />
                         <TextBlock
                             Text="یک فایل نسخهٔ پشتیبان انتخاب کنید تا همهٔ جدول‌ها و رکوردها، به‌همراه ساختار فایل و ارتباط جدول‌ها، بررسی شود."
                             Style="{StaticResource AppCaptionText}"
                             TextWrapping="Wrap"
+                            HorizontalAlignment="Right"
+                            TextAlignment="Right"
                             Margin="{StaticResource FieldHintMargin}" />
                         <Grid Margin="{StaticResource FormActionsMargin}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
                             <theme:AppButton
                                 x:Name="CheckButton"
+                                Grid.Column="0"
                                 Content="بررسی سلامت"
                                 Kind="Primary"
-                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
                                 Click="OnCheck" />
                             <StackPanel
+                                Grid.Column="1"
                                 Orientation="Horizontal"
                                 HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                FlowDirection="RightToLeft"
                                 Spacing="{StaticResource FieldGap}">
                                 <theme:AppButton
                                     Content="انتخاب فایل"
@@ -129,6 +181,8 @@
                         <ProgressBar
                             x:Name="CheckProgress"
                             Margin="{StaticResource FormActionsMargin}"
+                            HorizontalAlignment="Stretch"
+                            FlowDirection="RightToLeft"
                             Minimum="0"
                             Maximum="1"
                             Value="0"
@@ -137,10 +191,14 @@
                         <TextBlock
                             x:Name="CheckStatus"
                             Style="{StaticResource AppCaptionText}"
+                            HorizontalAlignment="Right"
+                            TextAlignment="Right"
                             Margin="{StaticResource FieldHintMargin}" />
                         <TextBlock
                             x:Name="CheckResult"
-                            Style="{StaticResource AppInkText}" />
+                            Style="{StaticResource AppInkText}"
+                            HorizontalAlignment="Right"
+                            TextAlignment="Right" />
                     </StackPanel>
                 </Border>
             </StackPanel>
