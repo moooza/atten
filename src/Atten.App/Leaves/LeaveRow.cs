@@ -1,6 +1,7 @@
 using System.Globalization;
 using Atten.Core;
 using Atten.Data;
+using Microsoft.UI.Xaml;
 
 namespace Atten.App.Leaves;
 
@@ -18,6 +19,7 @@ public sealed class LeaveRow
         EndDate = Dates.FormatShamsiDate(record.EndDate);
         Amount = Leave.FormatLeaveAmount(record.Minutes);
         CreatedAt = Stamp(record.CreatedAt);
+        SettlementVisibility = IsSettlement ? Visibility.Visible : Visibility.Collapsed;
     }
 
     public LeaveRecord Record { get; }
@@ -35,6 +37,8 @@ public sealed class LeaveRow
     public string Amount { get; }
 
     public string CreatedAt { get; }
+
+    public Visibility SettlementVisibility { get; }
 
     private static string Stamp(string? value)
     {

@@ -170,7 +170,7 @@ public sealed partial class LeavesPage : Page
             _editor = new LeaveForm();
             _editor.Saved += OnEditorSaved;
             _editor.Cancelled += OnEditorCancelled;
-            _editorWindow = new FormWindow(title, _editor, new SizeInt32(580, 700));
+            _editorWindow = new FormWindow(title, _editor, new SizeInt32(580, 700), fitContent: true);
             _editorWindow.Closed += OnEditorClosed;
         }
         else

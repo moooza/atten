@@ -12,6 +12,7 @@
     <Color x:Key="HighlightStrongColor">#D2B5E1</Color>
     <Color x:Key="DangerColor">#B42318</Color>
     <Color x:Key="SuccessColor">#15803D</Color>
+    <Color x:Key="SuccessSoftColor">#E3F6EA</Color>
     <Color x:Key="OnAccentColor">#FFFFFF</Color>
 
     <SolidColorBrush x:Key="Surface" Color="{StaticResource SurfaceColor}" />
@@ -23,6 +24,7 @@
     <SolidColorBrush x:Key="HighlightStrong" Color="{StaticResource HighlightStrongColor}" />
     <SolidColorBrush x:Key="Danger" Color="{StaticResource DangerColor}" />
     <SolidColorBrush x:Key="Success" Color="{StaticResource SuccessColor}" />
+    <SolidColorBrush x:Key="SuccessSoft" Color="{StaticResource SuccessSoftColor}" />
     <SolidColorBrush x:Key="OnAccent" Color="{StaticResource OnAccentColor}" />
 
     <SolidColorBrush x:Key="ListViewItemBackground" Color="{StaticResource SurfaceColor}" />

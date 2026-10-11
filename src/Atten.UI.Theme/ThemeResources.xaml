@@ -25,6 +25,7 @@
     <Thickness x:Key="PagePadding">20</Thickness>
     <Thickness x:Key="FormPadding">18,16</Thickness>
     <Thickness x:Key="ListCellPadding">8,6</Thickness>
+    <Thickness x:Key="ListCellBleed">-8,-6</Thickness>
     <Thickness x:Key="HeaderBottomMargin">0,0,0,10</Thickness>
     <Thickness x:Key="FieldHintMargin">0,4,0,8</Thickness>
     <Thickness x:Key="FormActionsMargin">0,12,0,0</Thickness>

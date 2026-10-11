@@ -13,7 +13,7 @@
         Style="{StaticResource AppPanel}"
         Padding="{StaticResource FormPadding}"
         HorizontalAlignment="Stretch"
-        VerticalAlignment="Stretch">
+        VerticalAlignment="Top">
         <StackPanel>
             <TextBlock
                 x:Name="Heading"
