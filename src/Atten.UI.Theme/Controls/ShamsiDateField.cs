@@ -52,7 +52,7 @@ public sealed class ShamsiDateField : UserControl
             VerticalAlignment = VerticalAlignment.Stretch,
             Content = new FontIcon
             {
-                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontFamily = Theme.IconFontFamily,
                 FontSize = 14,
                 Glyph = "\uE787",
             },

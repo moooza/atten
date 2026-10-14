@@ -19,7 +19,7 @@ public sealed class ShamsiMonthField : UserControl
     };
     private readonly FontIcon _chevron = new()
     {
-        FontFamily = new FontFamily("Segoe Fluent Icons"),
+        FontFamily = Theme.IconFontFamily,
         FontSize = 12,
         Glyph = "\uE70D",
         Margin = new Thickness(8, 0, 0, 0),
@@ -68,7 +68,7 @@ public sealed class ShamsiMonthField : UserControl
             Visibility = Visibility.Collapsed,
             Content = new FontIcon
             {
-                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                FontFamily = Theme.IconFontFamily,
                 FontSize = 12,
                 Glyph = "\uE711",
             },

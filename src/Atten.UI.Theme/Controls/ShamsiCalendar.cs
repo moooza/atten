@@ -50,7 +50,7 @@ public sealed class ShamsiCalendar : UserControl
         };
         _titleChevron = new FontIcon
         {
-            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontFamily = Theme.IconFontFamily,
             FontSize = 12,
             Glyph = "\uE70D",
             Margin = new Thickness(6, 0, 0, 0),

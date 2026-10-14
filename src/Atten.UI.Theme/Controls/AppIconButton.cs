@@ -14,7 +14,7 @@ public sealed class AppIconButton : Button
 
     private readonly FontIcon _icon = new()
     {
-        FontFamily = new FontFamily("Segoe Fluent Icons"),
+        FontFamily = Theme.IconFontFamily,
         FontSize = 16,
     };
 

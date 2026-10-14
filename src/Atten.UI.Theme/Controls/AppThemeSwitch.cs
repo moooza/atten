@@ -102,7 +102,7 @@ public sealed class AppThemeSwitch : UserControl
     {
         return new FontIcon
         {
-            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontFamily = Theme.IconFontFamily,
             FontSize = 16,
             Glyph = glyph,
         };

@@ -14,9 +14,15 @@ namespace Atten.UI.Theme;
 public static class Theme
 {
     public const string SettingKey = "theme";
+    public const string IconFontFamilyKey = "AppIconFontFamily";
+    public const string IconFontFamilyName =
+        "ms-appx:///Atten.UI.Theme/Fonts/SegoeFluentIcons.ttf#Segoe Fluent Icons";
+
+    private const uint FrPrivate = 0x10;
 
     private static UISettings? _uiSettings;
     private static WeakReference<FrameworkElement>? _appliedRoot;
+    private static FontFamily? _iconFontFamily;
 
     public static ResourceDictionary Light { get; } = new Light();
 
@@ -25,6 +31,9 @@ public static class Theme
     public static AppTheme Preference { get; private set; } = AppTheme.System;
 
     public static AppTheme Current { get; private set; } = AppTheme.Light;
+
+    public static FontFamily IconFontFamily =>
+        _iconFontFamily ??= ResolveIconFontFamily();
 
     public static event EventHandler? Changed;
 
@@ -40,6 +49,36 @@ public static class Theme
         }
 
         app.Resources.MergedDictionaries.Add(new ThemeResources());
+    }
+
+    /// <summary>
+    /// Loads Segoe Fluent Icons into this process. Windows 10 does not ship that font.
+    /// </summary>
+    internal static void RegisterIconFont()
+    {
+        foreach (string path in IconFontPaths())
+        {
+            if (!File.Exists(path))
+            {
+                continue;
+            }
+
+            try
+            {
+                if (AddFontResourceEx(path, FrPrivate, IntPtr.Zero) > 0)
+                {
+                    return;
+                }
+            }
+            catch (DllNotFoundException)
+            {
+                return;
+            }
+            catch (EntryPointNotFoundException)
+            {
+                return;
+            }
+        }
     }
 
     public static AppTheme Load()
@@ -173,6 +212,27 @@ public static class Theme
         _uiSettings = new UISettings();
         _uiSettings.ColorValuesChanged += OnSystemColorsChanged;
     }
+
+    private static FontFamily ResolveIconFontFamily()
+    {
+        if (Application.Current?.Resources.TryGetValue(IconFontFamilyKey, out object? value) == true
+            && value is FontFamily family)
+        {
+            return family;
+        }
+
+        return new FontFamily($"{IconFontFamilyName}, Segoe MDL2 Assets");
+    }
+
+    private static IEnumerable<string> IconFontPaths()
+    {
+        string root = AppContext.BaseDirectory;
+        yield return Path.Combine(root, "Fonts", "SegoeFluentIcons.ttf");
+        yield return Path.Combine(root, "Atten.UI.Theme", "Fonts", "SegoeFluentIcons.ttf");
+    }
+
+    [DllImport("gdi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern int AddFontResourceEx(string name, uint fl, IntPtr res);
 
     private static void OnSystemColorsChanged(UISettings sender, object args)
     {

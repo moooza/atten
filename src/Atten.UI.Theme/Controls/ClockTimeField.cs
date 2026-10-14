@@ -166,7 +166,7 @@ public sealed class ClockTimeField : UserControl
     {
         return new FontIcon
         {
-            FontFamily = new FontFamily("Segoe Fluent Icons"),
+            FontFamily = Theme.IconFontFamily,
             FontSize = 14,
             Glyph = glyph,
         };

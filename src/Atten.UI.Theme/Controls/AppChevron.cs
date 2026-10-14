@@ -20,7 +20,7 @@ public sealed class AppChevron : FontIcon
 
     public AppChevron()
     {
-        FontFamily = new FontFamily("Segoe Fluent Icons");
+        FontFamily = Theme.IconFontFamily;
         FontSize = 12;
         Glyph = DownGlyph;
         VerticalAlignment = VerticalAlignment.Center;
