@@ -108,14 +108,13 @@ internal sealed class SheetDayRowView : UserControl
         _frame.BorderBrush = Theme.Brush(this, Tokens.Line);
         _frame.BorderThickness = new Thickness(0, 0, 0, 1);
 
-        var holiday = new CheckBox
+        var holiday = new AppCheckBox
         {
             IsChecked = _row.Holiday,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             MinWidth = 0,
         };
-        Look.Apply(holiday, "AppCheckBox");
         holiday.Click += (_, _) => _callbacks.ToggleHoliday(_row.DateKey);
         Place(holiday, 0);
 

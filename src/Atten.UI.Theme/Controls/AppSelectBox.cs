@@ -21,7 +21,7 @@ public sealed class AppSelectBox : UserControl
         typeof(AppSelectBox),
         new PropertyMetadata(false, OnIsThreeStateChanged));
 
-    private readonly CheckBox _box = new();
+    private readonly AppCheckBox _box = new();
     private bool _syncing;
 
     public AppSelectBox()
@@ -36,8 +36,6 @@ public sealed class AppSelectBox : UserControl
         _box.HorizontalAlignment = HorizontalAlignment.Center;
         _box.VerticalAlignment = VerticalAlignment.Center;
         _box.HorizontalContentAlignment = HorizontalAlignment.Center;
-        _box.RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5);
-        _box.RenderTransform = new ScaleTransform { ScaleX = 0.78, ScaleY = 0.78 };
         _box.Checked += OnBoxChanged;
         _box.Unchecked += OnBoxChanged;
         _box.Indeterminate += OnBoxChanged;
@@ -93,6 +91,30 @@ public sealed class AppSelectBox : UserControl
     {
         Brush fill = Theme.Brush(this, Tokens.Accent);
         Brush glyph = Theme.Brush(this, Tokens.OnAccent);
+        Brush surface = Theme.Brush(this, Tokens.Surface);
+        Brush line = Theme.Brush(this, Tokens.Line);
+        foreach (string key in new[]
+        {
+            "CheckBoxCheckBackgroundFillUnchecked",
+            "CheckBoxCheckBackgroundFillUncheckedPointerOver",
+            "CheckBoxCheckBackgroundFillUncheckedPressed",
+            "CheckBoxCheckBackgroundFillUncheckedDisabled",
+        })
+        {
+            _box.Resources[key] = surface;
+        }
+
+        foreach (string key in new[]
+        {
+            "CheckBoxCheckBackgroundStrokeUnchecked",
+            "CheckBoxCheckBackgroundStrokeUncheckedPointerOver",
+            "CheckBoxCheckBackgroundStrokeUncheckedPressed",
+            "CheckBoxCheckBackgroundStrokeUncheckedDisabled",
+        })
+        {
+            _box.Resources[key] = line;
+        }
+
         foreach (string key in new[]
         {
             "CheckBoxCheckBackgroundFillChecked",

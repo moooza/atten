@@ -14,7 +14,7 @@ public sealed class AppThemeSwitch : UserControl
         nameof(Preference),
         typeof(AppTheme),
         typeof(AppThemeSwitch),
-        new PropertyMetadata(AppTheme.Light, OnPreferenceChanged));
+        new PropertyMetadata(AppTheme.System, OnPreferenceChanged));
 
     private readonly Button _dark;
     private readonly Button _system;

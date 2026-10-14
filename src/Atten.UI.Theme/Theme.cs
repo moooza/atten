@@ -22,7 +22,7 @@ public static class Theme
 
     public static ResourceDictionary Dark { get; } = new Dark();
 
-    public static AppTheme Preference { get; private set; } = AppTheme.Light;
+    public static AppTheme Preference { get; private set; } = AppTheme.System;
 
     public static AppTheme Current { get; private set; } = AppTheme.Light;
 
@@ -44,7 +44,7 @@ public static class Theme
 
     public static AppTheme Load()
     {
-        AppTheme preference = AppTheme.Light;
+        AppTheme preference = AppTheme.System;
         try
         {
             object? stored = ApplicationData.Current.LocalSettings.Values[SettingKey];

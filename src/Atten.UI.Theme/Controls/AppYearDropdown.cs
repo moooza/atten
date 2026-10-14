@@ -82,14 +82,13 @@ public sealed class AppYearDropdown : UserControl
         _checks.Clear();
         foreach (int year in _years)
         {
-            var box = new CheckBox
+            var box = new AppCheckBox
             {
                 Content = year.ToString(CultureInfo.InvariantCulture),
                 IsChecked = _selected.Contains(year),
                 Tag = year,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
             };
-            ThemeLooks.Apply(box, "AppCheckBox");
             PaintCheck(box);
             box.Checked += OnYearToggled;
             box.Unchecked += OnYearToggled;
