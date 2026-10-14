@@ -24,10 +24,10 @@ public sealed class ClockTimeField : UserControl
     private readonly Button _shiftRight;
     private readonly Button _shiftLeft;
     private readonly Button _cancel;
-    private readonly FontIcon _confirmIcon;
-    private readonly FontIcon _shiftRightIcon;
-    private readonly FontIcon _shiftLeftIcon;
-    private readonly FontIcon _cancelIcon;
+    private readonly AppFontIcon _confirmIcon;
+    private readonly AppFontIcon _shiftRightIcon;
+    private readonly AppFontIcon _shiftLeftIcon;
+    private readonly AppFontIcon _cancelIcon;
     private bool _syncing;
     private bool _accepting;
     private string _lastText = string.Empty;
@@ -154,7 +154,7 @@ public sealed class ClockTimeField : UserControl
         PaintAction(_cancel, _cancelIcon, Tokens.Danger);
     }
 
-    private void PaintAction(Button button, FontIcon icon, string token)
+    private void PaintAction(Button button, AppFontIcon icon, string token)
     {
         ThemeLooks.Apply(button, "AppChromeButton");
         button.Background = Theme.Brush(this, Tokens.Surface);
@@ -162,17 +162,16 @@ public sealed class ClockTimeField : UserControl
         icon.Foreground = Theme.Brush(this, token);
     }
 
-    private static FontIcon ActionIcon(string glyph)
+    private static AppFontIcon ActionIcon(string glyph)
     {
-        return new FontIcon
+        return new AppFontIcon
         {
-            FontFamily = Theme.IconFontFamily,
             FontSize = 14,
             Glyph = glyph,
         };
     }
 
-    private static Button ActionButton(FontIcon icon)
+    private static Button ActionButton(AppFontIcon icon)
     {
         return new Button
         {

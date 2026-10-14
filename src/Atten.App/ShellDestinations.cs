@@ -14,7 +14,7 @@ public static class ShellDestinations
     public static readonly ShellDestination Dashboard = new(
         "dashboard",
         "داشبورد",
-        "\uE9D2",
+        "\uE8A9",
         typeof(DashboardPage));
 
     public static readonly ShellDestination Personnel = new(

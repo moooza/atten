@@ -19,9 +19,9 @@ public sealed class AppThemeSwitch : UserControl
     private readonly Button _dark;
     private readonly Button _system;
     private readonly Button _light;
-    private readonly FontIcon _darkIcon = Icon("\uE708");
-    private readonly FontIcon _systemIcon = Icon("\uE7F4");
-    private readonly FontIcon _lightIcon = Icon("\uE706");
+    private readonly AppFontIcon _darkIcon = Icon("\uE708");
+    private readonly AppFontIcon _systemIcon = Icon("\uE7F4");
+    private readonly AppFontIcon _lightIcon = Icon("\uE706");
 
     public AppThemeSwitch()
     {
@@ -80,13 +80,13 @@ public sealed class AppThemeSwitch : UserControl
         Paint(_light, _lightIcon, Preference == AppTheme.Light);
     }
 
-    private static void Paint(Button button, FontIcon icon, bool selected)
+    private static void Paint(Button button, AppFontIcon icon, bool selected)
     {
         ThemeLooks.Apply(button, selected ? "AppThemeSwitchPartSelected" : "AppThemeSwitchPart");
         icon.Foreground = button.Foreground;
     }
 
-    private static Button Part(FontIcon icon, string caption)
+    private static Button Part(AppFontIcon icon, string caption)
     {
         ToolTipService.SetToolTip(icon, caption);
         var button = new Button
@@ -98,11 +98,10 @@ public sealed class AppThemeSwitch : UserControl
         return button;
     }
 
-    private static FontIcon Icon(string glyph)
+    private static AppFontIcon Icon(string glyph)
     {
-        return new FontIcon
+        return new AppFontIcon
         {
-            FontFamily = Theme.IconFontFamily,
             FontSize = 16,
             Glyph = glyph,
         };

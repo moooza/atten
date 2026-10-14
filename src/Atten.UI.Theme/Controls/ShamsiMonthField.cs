@@ -17,9 +17,8 @@ public sealed class ShamsiMonthField : UserControl
     {
         VerticalAlignment = VerticalAlignment.Center,
     };
-    private readonly FontIcon _chevron = new()
+    private readonly AppFontIcon _chevron = new()
     {
-        FontFamily = Theme.IconFontFamily,
         FontSize = 12,
         Glyph = "\uE70D",
         Margin = new Thickness(8, 0, 0, 0),
@@ -66,9 +65,8 @@ public sealed class ShamsiMonthField : UserControl
             Padding = new Thickness(8, 6, 8, 6),
             VerticalAlignment = VerticalAlignment.Stretch,
             Visibility = Visibility.Collapsed,
-            Content = new FontIcon
+            Content = new AppFontIcon
             {
-                FontFamily = Theme.IconFontFamily,
                 FontSize = 12,
                 Glyph = "\uE711",
             },
@@ -95,7 +93,7 @@ public sealed class ShamsiMonthField : UserControl
         Loaded += (_, _) =>
         {
             Paint();
-            ((FontIcon)_clear.Content).Foreground = Theme.Brush(this, Tokens.Muted);
+            ((AppFontIcon)_clear.Content).Foreground = Theme.Brush(this, Tokens.Muted);
         };
         ActualThemeChanged += (_, _) => Paint();
     }

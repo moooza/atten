@@ -50,9 +50,8 @@ public sealed class ShamsiDateField : UserControl
             BorderThickness = new Thickness(0),
             Padding = new Thickness(8, 6, 8, 6),
             VerticalAlignment = VerticalAlignment.Stretch,
-            Content = new FontIcon
+            Content = new AppFontIcon
             {
-                FontFamily = Theme.IconFontFamily,
                 FontSize = 14,
                 Glyph = "\uE787",
             },
@@ -83,12 +82,12 @@ public sealed class ShamsiDateField : UserControl
         Loaded += (_, _) =>
         {
             PaintChrome();
-            ((FontIcon)calendarButton.Content).Foreground = Theme.Brush(this, Tokens.Accent);
+            ((AppFontIcon)calendarButton.Content).Foreground = Theme.Brush(this, Tokens.Accent);
         };
         ActualThemeChanged += (_, _) =>
         {
             PaintChrome();
-            ((FontIcon)calendarButton.Content).Foreground = Theme.Brush(this, Tokens.Accent);
+            ((AppFontIcon)calendarButton.Content).Foreground = Theme.Brush(this, Tokens.Accent);
         };
         _dateText.GotFocus += (_, _) => _fieldBorder.BorderBrush = Theme.Brush(this, Tokens.Accent);
         _dateText.LostFocus += (_, _) => _fieldBorder.BorderBrush = Theme.Brush(this, Tokens.Line);

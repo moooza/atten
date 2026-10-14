@@ -24,9 +24,8 @@ public sealed class AppNavButton : Button
         typeof(AppNavButton),
         new PropertyMetadata(false, OnSelectedChanged));
 
-    private readonly FontIcon _icon = new()
+    private readonly AppFontIcon _icon = new()
     {
-        FontFamily = Theme.IconFontFamily,
         FontSize = 18,
     };
 

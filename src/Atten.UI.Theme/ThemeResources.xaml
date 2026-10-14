@@ -6,11 +6,11 @@
     <FontFamily x:Key="AppFontFamily">ms-appx:///Atten.UI.Theme/Fonts/Shabnam.ttf#Shabnam</FontFamily>
     <FontFamily x:Key="AppFontFamilyBold">ms-appx:///Atten.UI.Theme/Fonts/Shabnam-Bold.ttf#Shabnam</FontFamily>
     <FontFamily x:Key="AppFontFamilyMedium">ms-appx:///Atten.UI.Theme/Fonts/Shabnam-Medium.ttf#Shabnam</FontFamily>
-    <FontFamily x:Key="AppIconFontFamily">ms-appx:///Atten.UI.Theme/Fonts/SegoeFluentIcons.ttf#Segoe Fluent Icons</FontFamily>
+    <FontFamily x:Key="AppIconFontFamily">Segoe MDL2 Assets</FontFamily>
     <FontFamily x:Key="ContentControlThemeFontFamily">ms-appx:///Atten.UI.Theme/Fonts/Shabnam.ttf#Shabnam</FontFamily>
-    <FontFamily x:Key="SymbolThemeFontFamily">ms-appx:///Atten.UI.Theme/Fonts/SegoeFluentIcons.ttf#Segoe Fluent Icons</FontFamily>
+    <FontFamily x:Key="SymbolThemeFontFamily">Segoe MDL2 Assets</FontFamily>
     <Style TargetType="FontIcon">
-        <Setter Property="FontFamily" Value="{StaticResource AppIconFontFamily}" />
+        <Setter Property="FontFamily" Value="{StaticResource SymbolThemeFontFamily}" />
     </Style>
     <x:Double x:Key="BodyFontSize">14</x:Double>
     <x:Double x:Key="CaptionFontSize">12</x:Double>
@@ -383,7 +383,6 @@
         <Setter Property="BorderBrush" Value="{ThemeResource Surface}" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Padding" Value="{StaticResource NavButtonPadding}" />
-        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
         <Setter Property="FontSize" Value="{StaticResource BodyFontSize}" />
         <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
         <Setter Property="FlowDirection" Value="RightToLeft" />
@@ -574,7 +573,6 @@
         <Setter Property="BorderBrush" Value="{ThemeResource Accent}" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Padding" Value="{StaticResource NavButtonPadding}" />
-        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
         <Setter Property="FontSize" Value="{StaticResource BodyFontSize}" />
         <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
         <Setter Property="FlowDirection" Value="RightToLeft" />

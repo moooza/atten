@@ -12,9 +12,8 @@ public sealed class AppIconButton : Button
         typeof(AppIconButton),
         new PropertyMetadata("\uE713", OnGlyphChanged));
 
-    private readonly FontIcon _icon = new()
+    private readonly AppFontIcon _icon = new()
     {
-        FontFamily = Theme.IconFontFamily,
         FontSize = 16,
     };
 

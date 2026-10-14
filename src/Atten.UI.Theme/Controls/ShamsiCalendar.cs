@@ -30,7 +30,7 @@ public sealed class ShamsiCalendar : UserControl
     private ViewMode _view = ViewMode.Days;
     private IReadOnlySet<string>? _officialDates;
     private readonly TextBlock _titleLabel;
-    private readonly FontIcon _titleChevron;
+    private readonly AppFontIcon _titleChevron;
     private readonly Button _titleButton;
     private readonly AppButton _previous;
     private readonly AppButton _next;
@@ -48,9 +48,8 @@ public sealed class ShamsiCalendar : UserControl
             FontWeight = Microsoft.UI.Text.FontWeights.Normal,
             VerticalAlignment = VerticalAlignment.Center,
         };
-        _titleChevron = new FontIcon
+        _titleChevron = new AppFontIcon
         {
-            FontFamily = Theme.IconFontFamily,
             FontSize = 12,
             Glyph = "\uE70D",
             Margin = new Thickness(6, 0, 0, 0),
