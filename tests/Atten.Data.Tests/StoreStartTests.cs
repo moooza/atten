@@ -17,4 +17,18 @@ public class StoreStartTests
         Assert.NotEmpty(DatabaseBackup.SnapshotPaths(db.DbFile));
         Assert.Empty(Migrator.Apply(db.DbFile));
     }
+
+    [Fact]
+    public void StartWithoutPendingMigrationsDoesNotAddASnapshot()
+    {
+        using var db = new TempDatabase();
+        AttenStore.Start(db.DbFile);
+        int count = DatabaseBackup.SnapshotPaths(db.DbFile).Count;
+        Assert.True(count > 0);
+
+        AttenStore.Start(db.DbFile);
+
+        Assert.Equal(count, DatabaseBackup.SnapshotPaths(db.DbFile).Count);
+        Assert.Empty(Migrator.Pending(db.DbFile));
+    }
 }

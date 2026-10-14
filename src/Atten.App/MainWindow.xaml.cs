@@ -1,8 +1,11 @@
+using Atten.App.Backup;
 using Atten.App.Settings;
+using Atten.Data;
 using Atten.UI.Theme;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 using Windows.Graphics;
 
 namespace Atten.App;
@@ -11,6 +14,9 @@ public sealed partial class MainWindow : Window
 {
     private readonly Dictionary<string, AppNavButton> _navItems = new(StringComparer.Ordinal);
     private string? _active;
+    private string? _returnAfterPreview;
+    private bool _shellLocked;
+    private DatabaseRecoveryPage? _recoveryPage;
     private FormWindow? _advancedWindow;
     private AdvancedSettingsForm? _advancedForm;
     private FormWindow? _holidaysWindow;
@@ -38,7 +44,6 @@ public sealed partial class MainWindow : Window
         BuildNavigation();
         BindSettings();
         SetNotice(notice);
-        Show(ShellDestinations.Dashboard.Key);
     }
 
     public void SetNotice(string? notice)
@@ -56,12 +61,18 @@ public sealed partial class MainWindow : Window
 
     public void Show(string key)
     {
+        if (_shellLocked)
+        {
+            return;
+        }
+
         ShellDestination destination = ShellDestinations.All.First(item => item.Key == key);
         if (_active == destination.Key && ContentFrame.Content is not null)
         {
             return;
         }
 
+        DetachRecoveryPage();
         _active = destination.Key;
         foreach ((string name, AppNavButton button) in _navItems)
         {
@@ -69,6 +80,27 @@ public sealed partial class MainWindow : Window
         }
 
         ContentFrame.Navigate(destination.PageType);
+    }
+
+    /// <summary>
+    /// Recovery is not a shell destination. Nav and settings stay off until restore or preview close.
+    /// </summary>
+    public void ShowRecovery(DatabaseRecoveryRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        _returnAfterPreview = request.Preview ? _active : null;
+        SetShellLocked(true);
+        _active = null;
+        ContentFrame.Navigated -= OnRecoveryFrameNavigated;
+        ContentFrame.Navigated += OnRecoveryFrameNavigated;
+        ContentFrame.Navigate(typeof(DatabaseRecoveryPage), request);
+        AttachRecoveryPage();
+    }
+
+    private void OnRecoveryFrameNavigated(object sender, NavigationEventArgs args)
+    {
+        ContentFrame.Navigated -= OnRecoveryFrameNavigated;
+        AttachRecoveryPage();
     }
 
     private void SizeWindow()
@@ -108,18 +140,97 @@ public sealed partial class MainWindow : Window
         };
     }
 
+    private void SetShellLocked(bool locked)
+    {
+        _shellLocked = locked;
+        foreach (AppNavButton button in _navItems.Values)
+        {
+            button.IsEnabled = !locked;
+            if (locked)
+            {
+                button.IsSelected = false;
+            }
+        }
+
+        SettingsButton.IsEnabled = !locked;
+        if (locked)
+        {
+            SettingsButton.Flyout?.Hide();
+        }
+    }
+
+    private void AttachRecoveryPage()
+    {
+        DetachRecoveryPage();
+        if (ContentFrame.Content is not DatabaseRecoveryPage page)
+        {
+            return;
+        }
+
+        _recoveryPage = page;
+        page.Restored += OnRecoveryRestored;
+        page.PreviewClosed += OnRecoveryPreviewClosed;
+    }
+
+    private void DetachRecoveryPage()
+    {
+        if (_recoveryPage is null)
+        {
+            return;
+        }
+
+        _recoveryPage.Restored -= OnRecoveryRestored;
+        _recoveryPage.PreviewClosed -= OnRecoveryPreviewClosed;
+        _recoveryPage = null;
+    }
+
+    private void OnRecoveryRestored(object? sender, EventArgs args)
+    {
+        if (_recoveryPage is { Preview: true })
+        {
+            return;
+        }
+
+        if (!App.Current.TryStartStore(out string? notice))
+        {
+            SetNotice(notice);
+            return;
+        }
+
+        DetachRecoveryPage();
+        SetShellLocked(false);
+        SetNotice(null);
+        Show(ShellDestinations.Dashboard.Key);
+    }
+
+    private void OnRecoveryPreviewClosed(object? sender, EventArgs args)
+    {
+        string key = _returnAfterPreview ?? ShellDestinations.Dashboard.Key;
+        _returnAfterPreview = null;
+        DetachRecoveryPage();
+        SetShellLocked(false);
+        Show(key);
+    }
+
     private void OpenAdvancedSettings()
     {
+        if (_shellLocked)
+        {
+            return;
+        }
+
         SettingsButton.Flyout?.Hide();
         if (_advancedWindow is null || _advancedForm is null)
         {
             _advancedForm = new AdvancedSettingsForm();
             _advancedForm.HolidaysRequested += OnHolidaysRequested;
+            _advancedForm.PreviewRecoveryWithSnapshotsRequested += OnPreviewRecoveryWithSnapshots;
+            _advancedForm.PreviewRecoveryWithoutSnapshotsRequested += OnPreviewRecoveryWithoutSnapshots;
             _advancedForm.Cancelled += OnAdvancedCancelled;
             _advancedWindow = new FormWindow(
                 AppMessages.AdvancedSettings,
                 _advancedForm,
-                new SizeInt32(420, 480));
+                new SizeInt32(420, 720));
             _advancedWindow.Closed += OnAdvancedClosed;
         }
 
@@ -129,6 +240,30 @@ public sealed partial class MainWindow : Window
     private void OnHolidaysRequested(object? sender, EventArgs args)
     {
         OpenOfficialHolidays();
+    }
+
+    private void OnPreviewRecoveryWithSnapshots(object? sender, EventArgs args)
+    {
+        IReadOnlyList<BackupSnapshot> snapshots = App.Current.Store?.Backup.ListSnapshots()
+            ?? AttenStore.Backup().ListSnapshots();
+        if (snapshots.Count == 0)
+        {
+            snapshots = DatabaseRecoveryRequest.SampleSnapshots();
+        }
+
+        ShowRecoveryPreview(DatabaseRecoveryRequest.PreviewWithSnapshots(snapshots));
+    }
+
+    private void OnPreviewRecoveryWithoutSnapshots(object? sender, EventArgs args)
+    {
+        ShowRecoveryPreview(DatabaseRecoveryRequest.PreviewWithoutSnapshots());
+    }
+
+    private void ShowRecoveryPreview(DatabaseRecoveryRequest request)
+    {
+        _holidaysWindow?.Close();
+        _advancedWindow?.Close();
+        ShowRecovery(request);
     }
 
     private void OpenOfficialHolidays()
@@ -162,6 +297,8 @@ public sealed partial class MainWindow : Window
         if (_advancedForm is not null)
         {
             _advancedForm.HolidaysRequested -= OnHolidaysRequested;
+            _advancedForm.PreviewRecoveryWithSnapshotsRequested -= OnPreviewRecoveryWithSnapshots;
+            _advancedForm.PreviewRecoveryWithoutSnapshotsRequested -= OnPreviewRecoveryWithoutSnapshots;
             _advancedForm.Cancelled -= OnAdvancedCancelled;
         }
 

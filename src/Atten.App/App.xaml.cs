@@ -1,3 +1,4 @@
+using Atten.App.Backup;
 using Atten.Core;
 using Atten.Data;
 using Atten.UI.Theme;
@@ -7,12 +8,13 @@ namespace Atten.App;
 
 public partial class App : Application
 {
-    private Window? _window;
+    private MainWindow? _window;
 
     public App()
     {
         InitializeComponent();
         Theme.Load();
+        AttenStore.SnapshotKeep = BackupPreferences.Load();
         RequestedTheme = Theme.Current == AppTheme.Dark ? ApplicationTheme.Dark : ApplicationTheme.Light;
     }
 
@@ -31,6 +33,27 @@ public partial class App : Application
     }
 
     /// <summary>
+    /// Migrate and open a healthy or missing file. Does not restore a damaged database.
+    /// </summary>
+    public bool TryStartStore(out string? notice)
+    {
+        notice = null;
+        try
+        {
+            Store = AttenStore.Start();
+            ApplyOfficialHolidayCatalog();
+            return true;
+        }
+        catch (Exception)
+        {
+            Store = null;
+            notice = AppMessages.StartupFailed;
+            ShamsiCalendar.SharedOfficialDates = OfficialHoliday.Catalog(Array.Empty<string>());
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Hands the official-holiday catalog to every Shamsi picker.
     /// Theme paints those days; it does not query Data.
     /// </summary>
@@ -45,19 +68,21 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        string? notice = null;
-        try
+        _window = new MainWindow();
+        _window.Activate();
+
+        DatabaseInspection inspection = AttenStore.Inspect();
+        if (inspection.Status == DatabaseStatus.Damaged)
         {
-            Store = AttenStore.Start(out notice);
-            ApplyOfficialHolidayCatalog();
-        }
-        catch (Exception)
-        {
-            notice = AppMessages.StartupFailed;
-            ShamsiCalendar.SharedOfficialDates = OfficialHoliday.Catalog(Array.Empty<string>());
+            _window.ShowRecovery(DatabaseRecoveryRequest.Live(inspection.Snapshots));
+            return;
         }
 
-        _window = new MainWindow(notice);
-        _window.Activate();
+        if (!TryStartStore(out string? notice))
+        {
+            _window.SetNotice(notice);
+        }
+
+        _window.Show(ShellDestinations.Dashboard.Key);
     }
 }

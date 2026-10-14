@@ -1,0 +1,147 @@
+<Page
+    x:Class="Atten.App.Backup.DatabaseRecoveryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:theme="using:Atten.UI.Theme"
+    Background="{ThemeResource Surface}"
+    FlowDirection="LeftToRight">
+    <Grid Padding="{StaticResource PagePadding}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="{StaticResource HeaderBottomMargin}">
+            <Border
+                x:Name="PreviewBanner"
+                Style="{StaticResource AppPanel}"
+                Background="{ThemeResource Highlight}"
+                Padding="{StaticResource FormPadding}"
+                Margin="{StaticResource HeaderBottomMargin}"
+                Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock
+                        x:Name="PreviewBannerText"
+                        Style="{StaticResource AppInkText}"
+                        TextWrapping="Wrap"
+                        HorizontalAlignment="Right"
+                        TextAlignment="Right" />
+                    <theme:AppButton
+                        x:Name="ClosePreviewButton"
+                        Kind="Secondary"
+                        HorizontalAlignment="Right"
+                        Margin="{StaticResource FormActionsMargin}"
+                        Click="OnClosePreview" />
+                </StackPanel>
+            </Border>
+            <TextBlock
+                x:Name="Heading"
+                Style="{StaticResource AppTitleDangerText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
+            <TextBlock
+                x:Name="Hint"
+                Style="{StaticResource AppCaptionText}"
+                TextWrapping="Wrap"
+                HorizontalAlignment="Right"
+                TextAlignment="Right"
+                Margin="{StaticResource FieldHintMargin}" />
+            <TextBlock
+                x:Name="Notice"
+                Style="{StaticResource AppDangerText}"
+                HorizontalAlignment="Right"
+                TextAlignment="Right" />
+        </StackPanel>
+
+        <ScrollViewer
+            Grid.Row="1"
+            HorizontalAlignment="Stretch"
+            HorizontalContentAlignment="Stretch"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto">
+            <StackPanel
+                HorizontalAlignment="Stretch"
+                Spacing="{StaticResource PageGap}">
+                <Border
+                    x:Name="SnapshotPanel"
+                    Style="{StaticResource AppPanel}"
+                    Padding="{StaticResource FormPadding}"
+                    HorizontalAlignment="Stretch"
+                    Visibility="Collapsed">
+                    <StackPanel HorizontalAlignment="Stretch">
+                        <TextBlock
+                            x:Name="SnapshotsTitle"
+                            Style="{StaticResource AppListHeaderText}"
+                            HorizontalAlignment="Right"
+                            TextAlignment="Right" />
+                        <TextBlock
+                            x:Name="SnapshotsHint"
+                            Style="{StaticResource AppCaptionText}"
+                            TextWrapping="Wrap"
+                            HorizontalAlignment="Right"
+                            TextAlignment="Right"
+                            Margin="{StaticResource FieldHintMargin}" />
+                        <theme:AppComboBox
+                            x:Name="SnapshotCombo"
+                            HorizontalAlignment="Stretch"
+                            Margin="{StaticResource FieldHintMargin}" />
+                        <theme:AppButton
+                            x:Name="RestoreSnapshotButton"
+                            Kind="Danger"
+                            HorizontalAlignment="Right"
+                            Margin="{StaticResource FormActionsMargin}"
+                            Click="OnRestoreSnapshot" />
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Style="{StaticResource AppPanel}"
+                    Padding="{StaticResource FormPadding}"
+                    HorizontalAlignment="Stretch">
+                    <StackPanel HorizontalAlignment="Stretch">
+                        <TextBlock
+                            x:Name="FileTitle"
+                            Style="{StaticResource AppListHeaderText}"
+                            HorizontalAlignment="Right"
+                            TextAlignment="Right" />
+                        <TextBlock
+                            x:Name="FileHint"
+                            Style="{StaticResource AppCaptionText}"
+                            TextWrapping="Wrap"
+                            HorizontalAlignment="Right"
+                            TextAlignment="Right"
+                            Margin="{StaticResource FieldHintMargin}" />
+                        <Grid Margin="{StaticResource FormActionsMargin}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <theme:AppButton
+                                x:Name="RestoreFileButton"
+                                Grid.Column="0"
+                                Kind="Danger"
+                                VerticalAlignment="Center"
+                                Click="OnRestoreFile" />
+                            <StackPanel
+                                Grid.Column="1"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                FlowDirection="RightToLeft"
+                                Spacing="{StaticResource FieldGap}">
+                                <theme:AppButton
+                                    x:Name="ChooseFileButton"
+                                    Kind="Secondary"
+                                    Click="OnChooseFile" />
+                                <TextBlock
+                                    x:Name="FileLabel"
+                                    Style="{StaticResource AppCaptionText}"
+                                    VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

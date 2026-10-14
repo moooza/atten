@@ -38,9 +38,10 @@ public class BackupTests
         File.WriteAllBytes(db.DbFile, "torn write"u8.ToArray());
         File.WriteAllBytes(db.DbFile + "-wal", "stale wal"u8.ToArray());
 
-        string? notice = DatabaseBackup.Prepare(db.DbFile);
+        string? restored = DatabaseBackup.RestoreNewest(db.DbFile);
+        DatabaseBackup.EnsureReady(db.DbFile);
 
-        Assert.NotNull(notice);
+        Assert.NotNull(restored);
         Assert.True(DatabaseBackup.IsHealthy(db.DbFile));
         Assert.Equal(["kept"], PersonIds(db.DbFile));
         string corrupt = Path.Combine(db.Folder, "corrupt");
@@ -59,7 +60,7 @@ public class BackupTests
         byte[] original = "not a database"u8.ToArray();
         File.WriteAllBytes(db.DbFile, original);
 
-        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => DatabaseBackup.Prepare(db.DbFile));
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => DatabaseBackup.EnsureReady(db.DbFile));
         Assert.Equal(DatabaseBackup.DamagedWithoutBackup, error.Message);
 
         Assert.Equal(original, File.ReadAllBytes(db.DbFile));
@@ -77,6 +78,36 @@ public class BackupTests
         }
 
         Assert.Equal(2, DatabaseBackup.SnapshotPaths(db.DbFile).Count);
+    }
+
+    [Fact]
+    public void SnapshotUsesTheConfiguredKeepLimit()
+    {
+        using var db = new TempDatabase();
+        Migrator.Apply(db.DbFile);
+        DatabaseBackup.KeepSnapshots = 2;
+        for (int index = 0; index < 4; index++)
+        {
+            Assert.NotNull(DatabaseBackup.Snapshot(db.DbFile));
+        }
+
+        Assert.Equal(2, DatabaseBackup.SnapshotPaths(db.DbFile).Count);
+    }
+
+    [Fact]
+    public void ApplyKeepPrunesExistingAutomaticSnapshots()
+    {
+        using var db = new TempDatabase();
+        Migrator.Apply(db.DbFile);
+        for (int index = 0; index < 3; index++)
+        {
+            Assert.NotNull(DatabaseBackup.Snapshot(db.DbFile, keep: 10));
+        }
+
+        DatabaseBackup.ApplyKeep(db.DbFile, 1);
+
+        Assert.Equal(1, DatabaseBackup.KeepSnapshots);
+        Assert.Single(DatabaseBackup.SnapshotPaths(db.DbFile));
     }
 
     [Fact]
@@ -275,17 +306,177 @@ public class BackupTests
     }
 
     [Fact]
-    public void StartReturnsRestoredNoticeAfterRepairingADamagedFile()
+    public void StartAndEnsureReadyDoNotRestoreADamagedFile()
     {
         using var db = new TempDatabase();
         Migrator.Apply(db.DbFile);
         InsertPerson(db.DbFile, "kept");
+        Assert.NotEmpty(DatabaseBackup.ListSnapshots(db.DbFile));
+        byte[] torn = "torn write"u8.ToArray();
+        File.WriteAllBytes(db.DbFile, torn);
+        File.WriteAllBytes(db.DbFile + "-wal", "stale wal"u8.ToArray());
+
+        InvalidOperationException startError = Assert.Throws<InvalidOperationException>(
+            () => AttenStore.Start(db.DbFile, DefaultUser.Id, out _));
+        InvalidOperationException readyError = Assert.Throws<InvalidOperationException>(
+            () => DatabaseBackup.EnsureReady(db.DbFile));
+
+        Assert.Equal(DatabaseBackup.DamagedWithoutBackup, startError.Message);
+        Assert.Equal(DatabaseBackup.DamagedWithoutBackup, readyError.Message);
+        Assert.Equal(torn, File.ReadAllBytes(db.DbFile));
+        Assert.False(DatabaseBackup.IsHealthy(db.DbFile));
+        Assert.Equal("stale wal"u8.ToArray(), File.ReadAllBytes(db.DbFile + "-wal"));
+        Assert.False(Directory.Exists(Path.Combine(db.Folder, "corrupt")));
+    }
+
+    [Fact]
+    public void EnsureReadySnapshotsBeforeApplyingPendingMigrations()
+    {
+        using var db = new TempDatabase();
+        Migrator.Apply(db.DbFile);
+        DropMigration017(db.DbFile);
+        Assert.Empty(DatabaseBackup.SnapshotPaths(db.DbFile));
+
+        DatabaseInspection before = AttenStore.Inspect(db.DbFile);
+        Assert.Equal(DatabaseStatus.Healthy, before.Status);
+        Assert.Equal(["017"], before.Pending);
+        Assert.Empty(before.Snapshots);
+
+        DatabaseBackup.EnsureReady(db.DbFile);
+
+        string snapshot = Assert.Single(DatabaseBackup.SnapshotPaths(db.DbFile));
+        Assert.DoesNotContain("017", MigrationVersions(snapshot));
+        Assert.Contains("017", MigrationVersions(db.DbFile));
+        DatabaseInspection after = AttenStore.Inspect(db.DbFile);
+        Assert.Equal(DatabaseStatus.Healthy, after.Status);
+        Assert.Empty(after.Pending);
+        Assert.Empty(after.Snapshots);
+        Assert.Single(DatabaseBackup.ListSnapshots(db.DbFile));
+    }
+
+    [Fact]
+    public void SnapshotFailurePreventsApplyingPendingMigrations()
+    {
+        using var db = new TempDatabase();
+        Migrator.Apply(db.DbFile);
+        DropMigration017(db.DbFile);
+        File.WriteAllBytes(Path.Combine(db.Folder, "backups"), [1]);
+
+        Exception? error = Record.Exception(() => DatabaseBackup.EnsureReady(db.DbFile));
+
+        Assert.NotNull(error);
+        Assert.Equal(["017"], Migrator.Pending(db.DbFile));
+        Assert.DoesNotContain("017", MigrationVersions(db.DbFile));
+    }
+
+    [Fact]
+    public void InspectReportsMissingWithoutCreatingTheFile()
+    {
+        using var db = new TempDatabase();
+        Assert.False(File.Exists(db.DbFile));
+
+        DatabaseInspection result = AttenStore.Inspect(db.DbFile);
+
+        Assert.Equal(DatabaseStatus.Missing, result.Status);
+        Assert.Empty(result.Pending);
+        Assert.Empty(result.Snapshots);
+        Assert.False(File.Exists(db.DbFile));
+    }
+
+    [Fact]
+    public void InspectOmitsUnhealthySnapshots()
+    {
+        using var db = new TempDatabase();
+        Migrator.Apply(db.DbFile);
+        string older = Assert.IsType<string>(DatabaseBackup.Snapshot(db.DbFile));
+        string newer = Assert.IsType<string>(DatabaseBackup.Snapshot(db.DbFile));
+        File.SetLastWriteTimeUtc(older, new DateTime(2026, 10, 1, 8, 0, 0, DateTimeKind.Utc));
+        File.SetLastWriteTimeUtc(newer, new DateTime(2026, 10, 8, 21, 28, 5, DateTimeKind.Utc));
+        string junk = Path.Combine(db.Folder, "backups", "atten-2999-01-01T000000000000.db");
+        File.WriteAllBytes(junk, "this is not a database"u8.ToArray().Concat(new byte[128]).ToArray());
         File.WriteAllBytes(db.DbFile, "torn write"u8.ToArray());
 
+        DatabaseInspection result = AttenStore.Inspect(db.DbFile);
+
+        Assert.Equal(DatabaseStatus.Damaged, result.Status);
+        Assert.Empty(result.Pending);
+        Assert.Equal(
+            [Path.GetFileName(newer), Path.GetFileName(older)],
+            result.Snapshots.Select(snapshot => snapshot.Id).ToArray());
+        Assert.All(result.Snapshots, snapshot => Assert.Equal(snapshot.Id, Path.GetFileName(snapshot.Id)));
+        Assert.DoesNotContain(result.Snapshots, snapshot => snapshot.Id == Path.GetFileName(junk));
+    }
+
+    [Fact]
+    public void RestoreSnapshotThenEnsureReadyAppliesPendingMigrations()
+    {
+        using var db = new TempDatabase();
+        Migrator.Apply(db.DbFile);
+        InsertPerson(db.DbFile, "kept");
+        DropMigration017(db.DbFile);
+        string snapshotPath = Assert.IsType<string>(DatabaseBackup.Snapshot(db.DbFile));
+        Migrator.Apply(db.DbFile);
+        Assert.Contains("017", MigrationVersions(db.DbFile));
+
+        AttenStore.Backup(db.DbFile).RestoreSnapshot(Path.GetFileName(snapshotPath));
+
+        Assert.DoesNotContain("017", MigrationVersions(db.DbFile));
+        Assert.Equal(["017"], Migrator.Pending(db.DbFile));
+
+        DatabaseBackup.EnsureReady(db.DbFile);
+
+        Assert.Contains("017", MigrationVersions(db.DbFile));
+        Assert.Empty(Migrator.Pending(db.DbFile));
+        Assert.Equal(["kept"], PersonIds(db.DbFile));
+    }
+
+    [Fact]
+    public void RestoreSnapshotThenStartOpensTheRepairedFile()
+    {
+        using var db = new TempDatabase();
+        Migrator.Apply(db.DbFile);
+        InsertPerson(db.DbFile, "kept");
+        BackupSnapshot snapshot = Assert.Single(DatabaseBackup.ListSnapshots(db.DbFile));
+        File.WriteAllBytes(db.DbFile, "torn write"u8.ToArray());
+
+        AttenStore.Backup(db.DbFile).RestoreSnapshot(snapshot.Id);
         IAttenRepository store = AttenStore.Start(db.DbFile, DefaultUser.Id, out string? notice);
 
-        Assert.Equal(DatabaseBackup.RestoredNotice, notice);
+        Assert.Null(notice);
         Assert.Equal("kept", Assert.Single(store.Personnel.List()).RemoteId);
+    }
+
+    private static void DropMigration017(string dbFile)
+    {
+        SqliteDatabase.Use(dbFile, connection =>
+        {
+            using (SqliteCommand command = connection.CreateCommand())
+            {
+                command.CommandText = "DELETE FROM schema_migrations WHERE version = '017'";
+                command.ExecuteNonQuery();
+            }
+
+            using (SqliteCommand command = connection.CreateCommand())
+            {
+                command.CommandText = "ALTER TABLE calculation_days DROP COLUMN holiday_override";
+                command.ExecuteNonQuery();
+            }
+        });
+    }
+
+    private static List<string> MigrationVersions(string path)
+    {
+        using SqliteConnection connection = OpenRaw(path);
+        using SqliteCommand command = connection.CreateCommand();
+        command.CommandText = "SELECT version FROM schema_migrations ORDER BY version";
+        using SqliteDataReader reader = command.ExecuteReader();
+        var versions = new List<string>();
+        while (reader.Read())
+        {
+            versions.Add(reader.GetString(0));
+        }
+
+        return versions;
     }
 
     private static void InsertPerson(string dbFile, string remoteId)

@@ -4,6 +4,7 @@ internal sealed class TempDatabase : IDisposable
 {
     public TempDatabase()
     {
+        DatabaseBackup.KeepSnapshots = DatabaseBackup.DefaultKeepSnapshots;
         Folder = Path.Combine(Path.GetTempPath(), "atten-db-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Folder);
         DbFile = Path.Combine(Folder, "atten.db");
@@ -20,6 +21,7 @@ internal sealed class TempDatabase : IDisposable
 
     public void Dispose()
     {
+        DatabaseBackup.KeepSnapshots = DatabaseBackup.DefaultKeepSnapshots;
         try
         {
             Directory.Delete(Folder, recursive: true);

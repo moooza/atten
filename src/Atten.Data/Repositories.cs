@@ -35,6 +35,14 @@ public interface IBackupService
 
     void Restore(string source);
 
+    IReadOnlyList<BackupSnapshot> ListSnapshots();
+
+    void RestoreSnapshot(string id);
+
+    int SnapshotKeep { get; }
+
+    void ApplySnapshotKeep(int keep);
+
     BackupHealth Check(string path, Action<int, int, string>? onProgress = null);
 
     string Describe(BackupHealth result);
@@ -160,7 +168,7 @@ public interface IUserRepository
 /// <summary>Open the store without handing a SQLite type to App.</summary>
 public static class AttenStore
 {
-    /// <summary>Repair a damaged file if needed, migrate, then open as the default user.</summary>
+    /// <summary>Migrate a healthy or missing file, then open as the default user. Does not restore a damaged file.</summary>
     public static IAttenRepository Start()
     {
         return Start(out _);
@@ -184,8 +192,47 @@ public static class AttenStore
     public static IAttenRepository Start(string dbFile, long actorId, out string? notice)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dbFile);
-        notice = DatabaseBackup.Prepare(dbFile);
+        notice = null;
+        EnsureReady(dbFile);
         return Open(dbFile, actorId);
+    }
+
+    public static int SnapshotKeep
+    {
+        get => DatabaseBackup.KeepSnapshots;
+        set => DatabaseBackup.KeepSnapshots = value;
+    }
+
+    public static DatabaseInspection Inspect()
+    {
+        return Inspect(AppPaths.DbFile());
+    }
+
+    public static DatabaseInspection Inspect(string dbFile)
+    {
+        return DatabaseBackup.Inspect(dbFile);
+    }
+
+    public static void EnsureReady()
+    {
+        EnsureReady(AppPaths.DbFile());
+    }
+
+    public static void EnsureReady(string dbFile)
+    {
+        DatabaseBackup.EnsureReady(dbFile);
+    }
+
+    /// <summary>Backup helpers without opening the store. Safe when the live file is damaged.</summary>
+    public static IBackupService Backup()
+    {
+        return Backup(AppPaths.DbFile());
+    }
+
+    public static IBackupService Backup(string dbFile)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(dbFile);
+        return new SqliteBackupService(dbFile);
     }
 
     public static IAttenRepository Open()

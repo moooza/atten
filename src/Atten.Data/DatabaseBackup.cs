@@ -4,12 +4,25 @@ using Microsoft.Data.Sqlite;
 namespace Atten.Data;
 
 /// <summary>
-/// Crash-safe copies of the database, and restore when the live file is damaged.
-/// File snapshots stay in this layer; App never sees WAL or atten.db paths.
+/// Crash-safe copies of the database. Inspection and restore stay in this layer;
+/// App never sees WAL or atten.db paths, and Data does not decide which page to show.
 /// </summary>
 public static class DatabaseBackup
 {
-    public const int KeepSnapshots = 60;
+    public const int DefaultKeepSnapshots = 60;
+
+    public const int MinKeepSnapshots = 1;
+
+    public const int MaxKeepSnapshots = 365;
+
+    private static int _keepSnapshots = DefaultKeepSnapshots;
+
+    /// <summary>How many automatic snapshots to keep after each copy. Default is 60.</summary>
+    public static int KeepSnapshots
+    {
+        get => _keepSnapshots;
+        set => _keepSnapshots = NormalizeKeep(value);
+    }
 
     public const string RestoredNotice =
         "پایگاه داده آسیب دیده بود و از آخرین نسخهٔ پشتیبان سالم برگردانده شد. " +
@@ -47,21 +60,42 @@ public static class DatabaseBackup
 
     private static readonly string[] TableOrder = [.. TableLabels.Keys];
 
-    /// <summary>Migrate a healthy file, or replace a damaged one with the newest good snapshot.</summary>
-    public static string? Prepare(string dbFile)
+    /// <summary>
+    /// Classify the live file without creating it. Damaged files stay as they are.
+    /// </summary>
+    public static DatabaseInspection Inspect(string dbFile)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dbFile);
+        if (!File.Exists(dbFile))
+        {
+            return new DatabaseInspection(DatabaseStatus.Missing, [], []);
+        }
 
-        string? notice = null;
+        if (!IsHealthy(dbFile))
+        {
+            return new DatabaseInspection(DatabaseStatus.Damaged, [], ListSnapshots(dbFile));
+        }
+
+        return new DatabaseInspection(DatabaseStatus.Healthy, Migrator.Pending(dbFile), []);
+    }
+
+    /// <summary>
+    /// Snapshot before pending migrations, then apply. Does not restore a damaged file.
+    /// </summary>
+    public static void EnsureReady(string dbFile)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(dbFile);
         if (File.Exists(dbFile) && !IsHealthy(dbFile))
         {
-            string? restored = RestoreNewest(dbFile);
-            if (restored is null)
-            {
-                throw new InvalidOperationException(DamagedWithoutBackup);
-            }
+            throw new InvalidOperationException(DamagedWithoutBackup);
+        }
 
-            notice = RestoredNotice;
+        if (File.Exists(dbFile) && Migrator.Pending(dbFile).Count > 0)
+        {
+            if (Snapshot(dbFile) is null)
+            {
+                throw new InvalidOperationException(ExportFailed);
+            }
         }
 
         Migrator.Apply(dbFile);
@@ -69,12 +103,10 @@ public static class DatabaseBackup
         {
             Snapshot(dbFile);
         }
-
-        return notice;
     }
 
     /// <summary>Write a consistent single-file copy beside the database.</summary>
-    public static string? Snapshot(string dbFile, int keep = KeepSnapshots)
+    public static string? Snapshot(string dbFile, int? keep = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dbFile);
         if (!File.Exists(dbFile))
@@ -90,8 +122,30 @@ public static class DatabaseBackup
             return null;
         }
 
-        Prune(folder, keep);
+        Prune(folder, NormalizeKeep(keep ?? KeepSnapshots));
         return target;
+    }
+
+    public static int NormalizeKeep(int keep)
+    {
+        if (keep < MinKeepSnapshots)
+        {
+            return MinKeepSnapshots;
+        }
+
+        return keep > MaxKeepSnapshots ? MaxKeepSnapshots : keep;
+    }
+
+    /// <summary>Remember the keep count and drop extra automatic snapshots now.</summary>
+    public static void ApplyKeep(string dbFile, int keep)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(dbFile);
+        KeepSnapshots = keep;
+        string folder = Path.Combine(PortableRoot(dbFile), "backups");
+        if (Directory.Exists(folder))
+        {
+            Prune(folder, KeepSnapshots);
+        }
     }
 
     internal static void TrySnapshot(string dbFile)
@@ -105,24 +159,51 @@ public static class DatabaseBackup
         }
     }
 
+    /// <summary>Healthy automatic snapshots, newest first. Id is the file name, not a path.</summary>
+    public static IReadOnlyList<BackupSnapshot> ListSnapshots(string dbFile)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(dbFile);
+        return SnapshotPaths(dbFile)
+            .Select(path => (Path: path, Info: new FileInfo(path)))
+            .Where(item => IsHealthy(item.Path))
+            .OrderByDescending(item => item.Info.LastWriteTimeUtc)
+            .Select(item => new BackupSnapshot(item.Info.Name, item.Info.LastWriteTime))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Replace the live file with a healthy snapshot and quarantine the damaged copy.
+    /// Does not apply migrations; call <see cref="EnsureReady"/> after so an old schema is snapshotted first.
+    /// </summary>
+    public static void RestoreSnapshot(string dbFile, string id)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(dbFile);
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        if (!IsSnapshotName(id) || !string.Equals(id, Path.GetFileName(id), StringComparison.Ordinal))
+        {
+            throw new ArgumentException(NotABackup);
+        }
+
+        string backup = Path.Combine(PortableRoot(dbFile), "backups", id);
+        if (!File.Exists(backup) || !IsHealthy(backup))
+        {
+            throw new ArgumentException(NotABackup);
+        }
+
+        if (!CopySnapshotOverLive(dbFile, backup))
+        {
+            throw new InvalidOperationException(RestoreFailed);
+        }
+    }
+
     /// <summary>Replace a damaged database with the newest snapshot that still opens.</summary>
     public static string? RestoreNewest(string dbFile)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dbFile);
-        IReadOnlyList<string> candidates = SnapshotPaths(dbFile)
-            .OrderByDescending(path => new FileInfo(path).LastWriteTimeUtc)
-            .ToList();
-        foreach (string backup in candidates)
+        foreach (BackupSnapshot snapshot in ListSnapshots(dbFile))
         {
-            if (!IsHealthy(backup))
-            {
-                continue;
-            }
-
-            Quarantine(dbFile);
-            File.Copy(backup, dbFile, overwrite: true);
-            Fsync(dbFile);
-            if (IsHealthy(dbFile))
+            string backup = Path.Combine(PortableRoot(dbFile), "backups", snapshot.Id);
+            if (CopySnapshotOverLive(dbFile, backup))
             {
                 return backup;
             }
@@ -663,6 +744,14 @@ public static class DatabaseBackup
         }
     }
 
+    private static bool CopySnapshotOverLive(string dbFile, string backup)
+    {
+        Quarantine(dbFile);
+        File.Copy(backup, dbFile, overwrite: true);
+        Fsync(dbFile);
+        return IsHealthy(dbFile);
+    }
+
     private static void Quarantine(string dbFile)
     {
         string folder = Path.Combine(ParentDirectory(dbFile), "corrupt");
@@ -794,6 +883,20 @@ public sealed record BackupHealth(
         && ForeignKeyErrors.Count == 0;
 }
 
+public enum DatabaseStatus
+{
+    Missing,
+    Healthy,
+    Damaged,
+}
+
+public sealed record DatabaseInspection(
+    DatabaseStatus Status,
+    IReadOnlyList<string> Pending,
+    IReadOnlyList<BackupSnapshot> Snapshots);
+
+public sealed record BackupSnapshot(string Id, DateTime WrittenAt);
+
 internal sealed class SqliteBackupService : IBackupService
 {
     private readonly string _dbFile;
@@ -818,6 +921,23 @@ internal sealed class SqliteBackupService : IBackupService
     public void Restore(string source)
     {
         DatabaseBackup.Restore(_dbFile, source);
+    }
+
+    public IReadOnlyList<BackupSnapshot> ListSnapshots()
+    {
+        return DatabaseBackup.ListSnapshots(_dbFile);
+    }
+
+    public void RestoreSnapshot(string id)
+    {
+        DatabaseBackup.RestoreSnapshot(_dbFile, id);
+    }
+
+    public int SnapshotKeep => DatabaseBackup.KeepSnapshots;
+
+    public void ApplySnapshotKeep(int keep)
+    {
+        DatabaseBackup.ApplyKeep(_dbFile, keep);
     }
 
     public BackupHealth Check(string path, Action<int, int, string>? onProgress = null)

@@ -52,6 +52,28 @@ public static class Migrator
         return appliedNow;
     }
 
+    /// <summary>Unapplied migration versions. Does not create the file or apply scripts.</summary>
+    public static IReadOnlyList<string> Pending()
+    {
+        return Pending(AppPaths.DbFile());
+    }
+
+    public static IReadOnlyList<string> Pending(string dbFile)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(dbFile);
+        IReadOnlyList<string> versions = MigrationScripts()
+            .Select(item => item.Version)
+            .ToList();
+        if (!File.Exists(dbFile))
+        {
+            return versions;
+        }
+
+        using SqliteConnection connection = SqliteDatabase.OpenRaw(dbFile, SqliteOpenMode.ReadWrite);
+        HashSet<string> done = AppliedVersions(connection, transaction: null);
+        return versions.Where(version => !done.Contains(version)).ToList();
+    }
+
     internal static IReadOnlyList<(string Version, string FileName, string Sql)> EmbeddedMigrations()
     {
         Assembly assembly = typeof(Migrator).Assembly;
@@ -83,7 +105,7 @@ public static class Migrator
             .ToList();
     }
 
-    private static HashSet<string> AppliedVersions(SqliteConnection connection, SqliteTransaction transaction)
+    private static HashSet<string> AppliedVersions(SqliteConnection connection, SqliteTransaction? transaction)
     {
         using SqliteCommand exists = connection.CreateCommand();
         exists.Transaction = transaction;

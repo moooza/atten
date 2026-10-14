@@ -265,6 +265,32 @@ public class MigratorTests
     }
 
     [Fact]
+    public void PendingDoesNotCreateTheFile()
+    {
+        using var db = new TempDatabase();
+        Assert.False(File.Exists(db.DbFile));
+
+        IReadOnlyList<string> pending = Migrator.Pending(db.DbFile);
+
+        Assert.Equal(AllVersions, pending);
+        Assert.False(File.Exists(db.DbFile));
+    }
+
+    [Fact]
+    public void PendingListsUnappliedVersionsWithoutApplyingThem()
+    {
+        using var db = new TempDatabase();
+        Migrator.Apply(db.DbFile);
+        Assert.Empty(Migrator.Pending(db.DbFile));
+        SqliteDatabase.Use(db.DbFile, Revert017);
+
+        IReadOnlyList<string> pending = Migrator.Pending(db.DbFile);
+
+        Assert.Equal(["017"], pending);
+        SqliteDatabase.Use(db.DbFile, connection => Assert.Equal(AllVersions[..^1], Versions(connection)));
+    }
+
+    [Fact]
     public void AppliedAtIsRecordedAsUtc()
     {
         using var db = new TempDatabase();

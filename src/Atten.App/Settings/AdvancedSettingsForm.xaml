@@ -31,6 +31,68 @@
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
                     Click="OnHolidays" />
+                <TextBlock
+                    x:Name="KeepHeading"
+                    Style="{StaticResource AppListHeaderText}"
+                    HorizontalAlignment="Right"
+                    TextAlignment="Right"
+                    Margin="{StaticResource FormActionsMargin}" />
+                <TextBlock
+                    x:Name="KeepHint"
+                    Style="{StaticResource AppCaptionText}"
+                    TextWrapping="Wrap"
+                    HorizontalAlignment="Right"
+                    TextAlignment="Right"
+                    Margin="{StaticResource FieldHintMargin}" />
+                <StackPanel
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    FlowDirection="RightToLeft"
+                    Spacing="{StaticResource FieldGap}"
+                    Margin="{StaticResource FieldHintMargin}">
+                    <theme:AppTextBox
+                        x:Name="KeepBox"
+                        Width="{StaticResource AmountFieldWidth}"
+                        TextAlignment="Center"
+                        BeforeTextChanging="OnKeepChanging" />
+                    <theme:AppButton
+                        x:Name="KeepSaveButton"
+                        Kind="Primary"
+                        Click="OnSaveKeep" />
+                </StackPanel>
+                <TextBlock
+                    x:Name="KeepNotice"
+                    Style="{StaticResource AppCaptionText}"
+                    HorizontalAlignment="Right"
+                    TextAlignment="Right"
+                    Margin="{StaticResource FieldHintMargin}" />
+                <TextBlock
+                    x:Name="PreviewHeading"
+                    Style="{StaticResource AppListHeaderText}"
+                    HorizontalAlignment="Right"
+                    TextAlignment="Right"
+                    Margin="{StaticResource FormActionsMargin}" />
+                <TextBlock
+                    x:Name="PreviewHint"
+                    Style="{StaticResource AppCaptionText}"
+                    TextWrapping="Wrap"
+                    HorizontalAlignment="Right"
+                    TextAlignment="Right"
+                    Margin="{StaticResource FieldHintMargin}" />
+                <theme:AppButton
+                    x:Name="PreviewWithSnapshotsButton"
+                    Margin="{StaticResource FormActionsMargin}"
+                    Kind="Secondary"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Click="OnPreviewWithSnapshots" />
+                <theme:AppButton
+                    x:Name="PreviewWithoutSnapshotsButton"
+                    Margin="{StaticResource FormActionsMargin}"
+                    Kind="Secondary"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Click="OnPreviewWithoutSnapshots" />
             </StackPanel>
 
             <StackPanel

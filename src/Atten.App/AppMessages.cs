@@ -9,6 +9,43 @@ public static class AppMessages
         "پایگاه داده آسیب دیده است و نسخهٔ پشتیبانی برای برگرداندن آن پیدا نشد. " +
         "فایل خراب سر جایش مانده است.";
 
+    public const string RecoveryTitle = "بازیابی پایگاه داده";
+
+    public const string RecoveryHint =
+        "فایل اصلی پایگاه داده سالم نیست. یک نسخهٔ پشتیبان سالم یا یک فایل پشتیبان را برگردانید. " +
+        "بستن پنجره تنها راه خروج بدون بازگردانی است.";
+
+    public const string RecoveryNoSnapshots =
+        "پایگاه داده آسیب دیده است و نسخهٔ پشتیبانی برای برگرداندن آن پیدا نشد. " +
+        "یک فایل پشتیبان انتخاب کنید. بستن پنجره تنها راه خروج بدون بازگردانی است.";
+
+    public const string RecoverySnapshotsTitle = "نسخه‌های پشتیبان سالم";
+
+    public const string RecoverySnapshotsHint =
+        "جدیدترین نسخه پیش‌انتخاب شده است. با تأیید، فایل خراب کنار گذاشته می‌شود و این نسخه جایگزین آن می‌شود.";
+
+    public const string RecoveryRestoreSnapshot = "بازگردانی این نسخه";
+
+    public const string RecoveryNeedSnapshot = "یک نسخهٔ پشتیبان را از فهرست انتخاب کنید.";
+
+    public const string RecoveryConfirmTitle = "بازگردانی";
+
+    public const string RecoverySnapshotAsk =
+        "با بازگردانی این نسخه، فایل خراب کنار گذاشته می‌شود و جای آن را این پشتیبان می‌گیرد. ادامه می‌دهید؟";
+
+    public const string RecoverySnapshotDate = "تاریخ: ";
+
+    public const string RecoveryFileTitle = "بازگردانی از فایل پشتیبان";
+
+    public const string RecoverySnapshotRestored = "نسخهٔ پشتیبان برگردانده شد.";
+
+    public const string RecoveryPreviewBanner =
+        "پایگاه فعلی سالم است. این فقط نمایش صفحه بازیابی است و داده‌ای عوض نمی‌شود.";
+
+    public const string RecoveryPreviewNotice = "در نمایش آزمایشی بازگردانی انجام نمی‌شود.";
+
+    public const string RecoveryClosePreview = "بستن نمایش آزمایشی";
+
     public const string BackupTitle = "پشتیبان";
 
     public const string BackupExportTitle = "ایجاد نسخهٔ پشتیبان";
@@ -168,6 +205,26 @@ public static class AppMessages
     public const string CalculationReset = "بازنشانی";
 
     public const string AdvancedSettings = "تنظیمات پیشرفته";
+
+    public const string SnapshotKeepTitle = "تعداد نسخه‌های پشتیبان خودکار";
+
+    public const string SnapshotKeepHint =
+        "بعد از هر ذخیره، نسخه‌های قدیمی‌تر از این تعداد حذف می‌شوند. پیش‌فرض ۶۰ است.";
+
+    public const string SnapshotKeepSave = "ثبت";
+
+    public const string SnapshotKeepSaved = "تعداد نسخه‌های پشتیبان ذخیره شد.";
+
+    public const string SnapshotKeepInvalid = "تعداد باید یک عدد بین ۱ و ۳۶۵ باشد.";
+
+    public const string RecoveryPreviewSection = "نمایش آزمایشی بازیابی";
+
+    public const string RecoveryPreviewSectionHint =
+        "پایگاه فعلی عوض نمی‌شود. صفحه بازیابی را همان‌طور که در استارت دیده می‌شود نشان می‌دهد.";
+
+    public const string RecoveryPreviewWithSnapshots = "نمایش بازیابی با نسخهٔ پشتیبان";
+
+    public const string RecoveryPreviewWithoutSnapshots = "نمایش بازیابی بدون نسخهٔ پشتیبان";
 
     public const string DashboardHolidayMissing = "تعطیلات رسمی امسال اضافه نشده است.";
 
