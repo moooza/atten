@@ -5,7 +5,7 @@
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>Atten.App</RootNamespace>
-    <Version>2.3</Version>
+    <Version>2.4</Version>
     <EnableMsixTooling>true</EnableMsixTooling>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
