@@ -25,6 +25,13 @@ public class PayrollTests
         Assert.Equal(440, totals.LeaveMinutes);
         Assert.Equal(120, totals.RemainingLeaveMinutes);
         Assert.Equal(new PayrollTotals(0, 0, 0, 0), Payroll.Summarize([], 0, 0));
+        Assert.Equal(
+            "جمع اضافه کار: 1 ساعت و 10 دقیقه    جمع کسر کار: 45 دقیقه    جمع مرخصی: 1 روز و 0 ساعت و 0 دقیقه",
+            Payroll.FormatRangeTotals(totals));
+        Assert.Equal(string.Empty, Payroll.FormatRangeTotals(new PayrollTotals(0, 0, 0, 0)));
+        Assert.Equal(
+            "جمع اضافه کار: 1 ساعت",
+            Payroll.FormatRangeTotals(new PayrollTotals(60, 0, 0, 0)));
     }
 
     [Fact]

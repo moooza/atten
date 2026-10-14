@@ -353,6 +353,7 @@ public sealed partial class CalculationPage : Page
         int punchCount = SheetLayout.PunchCount(rows);
         if (TryBindRows(rows, punchCount))
         {
+            BindRangeTotals(rows);
             return;
         }
 
@@ -378,6 +379,7 @@ public sealed partial class CalculationPage : Page
         _punchCount = punchCount;
         EmptyText.Visibility = Visibility.Collapsed;
         TablePanel.Visibility = Visibility.Visible;
+        BindRangeTotals(rows);
         if (keepScroll)
         {
             RestoreSheetScroll(horizontal, vertical, extentHeight);
@@ -518,6 +520,25 @@ public sealed partial class CalculationPage : Page
         EmptyText.Text = message;
         EmptyText.Visibility = Visibility.Visible;
         TablePanel.Visibility = Visibility.Collapsed;
+        RangeTotals.Text = string.Empty;
+        RangeTotals.Visibility = Visibility.Collapsed;
+    }
+
+    private void BindRangeTotals(IReadOnlyList<SheetRow> rows)
+    {
+        int leaveMinutes = 0;
+        foreach (SheetRow row in rows)
+        {
+            if (row.LeaveMinutes > 0)
+            {
+                leaveMinutes += row.LeaveMinutes;
+            }
+        }
+
+        PayrollTotals totals = Payroll.Summarize(rows.Select(row => row.BalanceMinutes), leaveMinutes, 0);
+        string text = Payroll.FormatRangeTotals(totals);
+        RangeTotals.Text = text;
+        RangeTotals.Visibility = string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void DismissEdits()

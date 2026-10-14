@@ -63,6 +63,31 @@ public static class Payroll
         return new PayrollTotals(overtime, deficit, leaveMinutes, remainingLeaveMinutes);
     }
 
+    /// <summary>
+    /// Range totals for the calculation sheet. Empty parts are omitted; all-zero is empty.
+    /// </summary>
+    public static string FormatRangeTotals(PayrollTotals totals)
+    {
+        ArgumentNullException.ThrowIfNull(totals);
+        var parts = new List<string>();
+        if (totals.OvertimeMinutes > 0)
+        {
+            parts.Add($"جمع اضافه کار: {Leave.FormatLeaveDuration(totals.OvertimeMinutes)}");
+        }
+
+        if (totals.DeficitMinutes > 0)
+        {
+            parts.Add($"جمع کسر کار: {Leave.FormatLeaveDuration(totals.DeficitMinutes)}");
+        }
+
+        if (totals.LeaveMinutes > 0)
+        {
+            parts.Add($"جمع مرخصی: {Leave.FormatLeaveAmount(totals.LeaveMinutes)}");
+        }
+
+        return string.Join("    ", parts);
+    }
+
     public static bool IsDraft(string status)
     {
         return string.Equals(status, Draft, StringComparison.Ordinal);
